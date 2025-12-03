@@ -14,19 +14,6 @@ Yearly Aggregation: It calculates yearly mean fields to generate aggregated summ
 
 All resulting visualizations are automatically organized and saved into the output directory.
 
-### Directory Structure
-
-The script automatically creates the following folder structure:
-
-comparison_plots/
-├── [variable_name]/       (e.g., t2m)
-│   ├── stats/             (Monthly Box, ECDF, Q-Q plots)
-│   ├── maps/              (Monthly Spatial Maps)
-│   └── timeseries/        (Monthly Time Series plots)
-└── yearly/
-├── [variable_name]/   (Yearly aggregate plots for specific variable)
-└── [summary_plots]    (Combined plots containing all variables)
-
 ### Plot Descriptions
 
 Box Plot:
