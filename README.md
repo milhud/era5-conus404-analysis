@@ -1,26 +1,20 @@
 # era5-conus404-analysis
-ERA5 vs CONUS404 Comparison Script
 
 This script compares ERA5 reanalysis data against CONUS404 model output. It processes NetCDF files to generate statistical visualizations, spatial maps, and time series analysis for specified variables (e.g., Temperature).
 
-Workflow
+### Workflow
 
-[ era5_2015.nc ]       [ conus404_yearly_2010.nc ]
-|                          |
-v                          v
-[ Load Datasets ] -> [ Trim to US Region ]
-|
-+---------------+---------------+
-|                               |
-[ Monthly Loop ]               [ Yearly Aggregation ]
-|                               |
-1. Calculate Stats              1. Calculate Mean Fields
-2. Generate Plots               2. Generate Summary Plots
-|                               |
-v                               v
-[ Output: comparison_plots/ ]   [ Output: comparison_plots/yearly/ ]
+The script begins by loading the ERA5 and CONUS404 NetCDF datasets defined in the configuration. It automatically trims both datasets to a specified geographical bounding box covering the United States to ensure consistent spatial comparisons.
 
-Directory Structure
+Once the data is preprocessed, the script performs two main analytical routines:
+
+Monthly Analysis: It iterates through each month of the year to calculate statistics (ECDF, Box plots, Q-Q plots), generate spatial temperature maps, and plot time series data.
+
+Yearly Aggregation: It calculates yearly mean fields to generate aggregated summary plots for all variables side-by-side.
+
+All resulting visualizations are automatically organized and saved into the output directory.
+
+### Directory Structure
 
 The script automatically creates the following folder structure:
 
@@ -54,6 +48,13 @@ Line graphs tracking the spatially averaged value of the variable over time.
 
 Ensure the NetCDF files are in the same directory or update the file paths in the Configuration section of the script.
 
-Run the script using Python 3.
+Install the required dependencies:
+
+pip install -r requirements.txt
+
+
+### Run the script:
+
+python3 script.py
 
 Check the 'comparison_plots' directory for output.
