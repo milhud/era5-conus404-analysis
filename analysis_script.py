@@ -36,7 +36,7 @@ LAT_MIN, LAT_MAX = 24, 50
 LON_MIN, LON_MAX = -125, -66
 
 # Boolean switch (Controls Monthly Stats, Maps, and Time Series separation)
-SEPARATE_IMAGES = True 
+SEPARATE_IMAGES = False 
 
 def setup_directories(base_output_dir, var_name, separate_mode):
     """Creates directory structure for Monthly data."""
