@@ -31,14 +31,26 @@ VARIABLE_PAIRS = {
     'v10': 'V10',         # 10m V-Wind Component
     'lai': 'LAI',         # Leaf Area Index
     'tp': 'ACRAINLSM',    # Total Precipitation
-    # 'z': 'Z',             # Geopotential / Geopotential Height (COMMENTED OUT)
+    # 'z': 'Z',             # Geopotential (Commented out)
+}
+
+# Units for labeling
+VARIABLE_UNITS = {
+    't2m': 'K',
+    'd2m': 'K',
+    'sp': 'Pa',
+    'u10': 'm/s',
+    'v10': 'm/s',
+    'lai': 'Index',
+    'tp': 'mm',
+    'z': 'm²/s²'
 }
 
 LAT_MIN, LAT_MAX = 24, 50
 LON_MIN, LON_MAX = -125, -66
 
 # Boolean switch (Controls Monthly Stats, Maps, and Time Series separation)
-SEPARATE_IMAGES = False 
+SEPARATE_IMAGES = True 
 
 def setup_directories(base_output_dir, var_name, separate_mode):
     """Creates directory structure for Monthly data."""
@@ -88,10 +100,7 @@ def get_clean_values(data):
     return vals[np.isfinite(vals)]
 
 def trim_to_us(data, lat_min, lat_max, lon_min, lon_max, lat_grid=None, lon_grid=None):
-    """
-    Trims dataset to US bounds.
-    """
-    # CONUS / Curvilinear Case
+    """Trims dataset to US bounds."""
     if lat_grid is not None and lon_grid is not None:
         mask = (
             (lat_grid >= lat_min) & (lat_grid <= lat_max) &
@@ -99,7 +108,6 @@ def trim_to_us(data, lat_min, lat_max, lon_min, lon_max, lat_grid=None, lon_grid
         )
         return data.where(mask, drop=False)
     
-    # ERA5 / Rectilinear Case
     if 'latitude' in data.dims and 'longitude' in data.dims:
         return data.sel(
             latitude=slice(lat_max, lat_min), 
@@ -129,10 +137,7 @@ def load_all_monthly_data(era_ds, conus_ds, era_var, conus_var):
     return era_monthly_data, conus_monthly_data
 
 def compute_global_limits(era_monthly_data, conus_monthly_data, era_var):
-    """
-    Computes global min/max. 
-    UPDATED: Checks if era_var is 'tp' to SUM instead of MEAN.
-    """
+    """Computes global min/max with unit conversion for TP."""
     all_era_vals = []
     all_conus_vals = []
     
@@ -142,9 +147,9 @@ def compute_global_limits(era_monthly_data, conus_monthly_data, era_var):
     for month in era_monthly_data.keys():
         era_dims = [d for d in era_monthly_data[month].dims if d in ['valid_time', 'time']]
         
-        # LOGIC CHANGE: Sum for precipitation (tp), Mean for others
         if era_var == 'tp':
-            era_agg = era_monthly_data[month].sum(dim=era_dims, skipna=True)
+            # Sum across time, then multiply by 1000 for Meters -> Millimeters
+            era_agg = era_monthly_data[month].sum(dim=era_dims, skipna=True) * 1000
             conus_agg = conus_monthly_data[month].sum(dim=conus_time_dim, skipna=True)
         else:
             era_agg = era_monthly_data[month].mean(dim=era_dims, skipna=True)
@@ -172,7 +177,6 @@ def plot_box(ax, era_vals, conus_vals, labels, global_min, global_max, title=Non
     bp['boxes'][0].set_facecolor('lightblue')
     bp['boxes'][1].set_facecolor('lightcoral')
     
-    # CHANGED: Median line color to dark red and thicker lines
     for median in bp['medians']:
         median.set_color('darkred')
         median.set_linewidth(2)
@@ -181,7 +185,6 @@ def plot_box(ax, era_vals, conus_vals, labels, global_min, global_max, title=Non
         ax.set_ylabel(ylabel, fontsize=10)
     
     if global_min is not None and global_max is not None:
-        # CHANGED: Added 5% padding to keep boxplots on page
         y_range = global_max - global_min
         pad = y_range * 0.05
         ax.set_ylim(global_min - pad, global_max + pad)
@@ -191,7 +194,7 @@ def plot_box(ax, era_vals, conus_vals, labels, global_min, global_max, title=Non
     if title:
         ax.set_title(title, fontsize=11, fontweight='bold', pad=8)
 
-def plot_ecdf(ax, era_vals, conus_vals, global_min, global_max, title=None):
+def plot_ecdf(ax, era_vals, conus_vals, global_min, global_max, title=None, unit_label=''):
     era_sorted = np.sort(era_vals)
     conus_sorted = np.sort(conus_vals)
     era_ecdf = np.arange(1, len(era_sorted)+1) / len(era_sorted)
@@ -203,12 +206,14 @@ def plot_ecdf(ax, era_vals, conus_vals, global_min, global_max, title=None):
     if global_min is not None and global_max is not None:
         ax.set_xlim(global_min, global_max)
     ax.grid(alpha=0.3)
+    ax.set_xlabel(f'Value ({unit_label})', fontsize=9)
+    ax.set_ylabel('Probability', fontsize=9)
     
     if title:
         ax.set_title(title, fontsize=11, fontweight='bold', pad=8)
         ax.legend(fontsize=8, loc='lower right')
 
-def plot_qq(ax, x, y, label_x, label_y, global_min, global_max, title=None):
+def plot_qq(ax, x, y, label_x, label_y, global_min, global_max, title=None, unit_label=''):
     n = min(len(x), len(y))
     quantiles = np.linspace(0, 1, n)
     x_q = np.quantile(x, quantiles)
@@ -216,14 +221,14 @@ def plot_qq(ax, x, y, label_x, label_y, global_min, global_max, title=None):
     
     ax.scatter(x_q, y_q, alpha=0.6, s=5, color='darkblue')
     
-    slope, intercept, r_value, _, _ = linregress(x_q, y_q)
-    fit_line = slope * x_q + intercept
-    ax.plot(x_q, fit_line, 'g-', alpha=0.7, linewidth=1.5,
-            label=f'R²={r_value**2:.2f}')
+    if len(x_q) > 1 and (x_q.std() > 0 or y_q.std() > 0):
+        slope, intercept, r_value, _, _ = linregress(x_q, y_q)
+        fit_line = slope * x_q + intercept
+        ax.plot(x_q, fit_line, 'g-', alpha=0.7, linewidth=1.5,
+                label=f'R²={r_value**2:.2f}')
     
-    ax.set_xlabel(f'{label_x}', fontsize=9)
-    if label_x != label_y:
-        ax.set_ylabel(f'{label_y}', fontsize=9)
+    ax.set_xlabel(f'{label_x} ({unit_label})', fontsize=9)
+    ax.set_ylabel(f'{label_y} ({unit_label})', fontsize=9)
         
     ax.legend(fontsize=8, loc='upper left')
     ax.grid(True, alpha=0.3)
@@ -251,12 +256,12 @@ def add_map_features(ax, lon_min, lon_max, lat_min, lat_max):
 # --- MONTHLY GENERATION FUNCTIONS ---
 
 def generate_monthly_temperature_maps(era_ds, conus_ds, dirs, separate_images):
-    """MOVED TO TOP - Generate temperature maps first"""
+    """Generate temperature maps."""
     print("Processing monthly temperature maps...")
     if 't2m' not in era_ds or 'T2' not in conus_ds: return
     time_dim, (lat_name, lon_name) = get_time_dimension(conus_ds), get_coordinate_names(conus_ds)
+    unit = VARIABLE_UNITS.get('t2m', 'K')
     
-    # Calculate GLOBAL limits first
     all_temps = []
     for month in range(1, 13):
         era_dims = [d for d in era_ds['t2m'].dims if d in ['valid_time', 'time']]
@@ -289,7 +294,7 @@ def generate_monthly_temperature_maps(era_ds, conus_ds, dirs, separate_images):
             ax2.set_title('CONUS404', fontsize=12)
             
             cbar = fig.colorbar(p2, cax=fig.add_subplot(gs[2]), extend='both')
-            cbar.set_label('Temperature (K)', fontsize=10)
+            cbar.set_label(f'Temperature ({unit})', fontsize=10)
             plt.suptitle(f'{month_name} Temperature Comparison', fontsize=16, fontweight='bold', y=0.95)
             plt.savefig(os.path.join(dirs['maps'], f'map_t2m_month{month_num:02d}.png'), dpi=300, bbox_inches='tight')
             plt.close()
@@ -318,7 +323,7 @@ def generate_monthly_temperature_maps(era_ds, conus_ds, dirs, separate_images):
             add_map_features(ax2, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX)
             ax2.set_title(f'{month_name}\nCONUS404', fontsize=10)
             
-            fig.colorbar(p2, cax=fig.add_subplot(gs_sub[2]), extend='both').set_label('K', fontsize=9)
+            fig.colorbar(p2, cax=fig.add_subplot(gs_sub[2]), extend='both').set_label(f'K', fontsize=9)
         plt.suptitle('Monthly Temperature Comparison', fontsize=20, fontweight='bold', y=0.98)
         plt.subplots_adjust(left=0.02, right=0.98, top=0.92, bottom=0.02)
         plt.savefig(os.path.join(dirs['base'], 'map_t2m_all_months.png'), dpi=300, bbox_inches='tight')
@@ -334,9 +339,9 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
         print(f"  Skipping {era_var}/{conus_var}: {e}")
         return
 
-    # UPDATED: Pass era_var to compute logic so it knows to SUM tp
     global_min, global_max = compute_global_limits(era_monthly_data, conus_monthly_data, era_var)
     time_dim = get_time_dimension(conus_ds)
+    unit = VARIABLE_UNITS.get(era_var, '')
     
     if separate_images:
         for month_idx in range(12):
@@ -345,9 +350,8 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
             
             era_dims = [d for d in era_monthly_data[month_num].dims if d in ['valid_time', 'time']]
             
-            # CHANGED: TP logic - Sum instead of Mean
             if era_var == 'tp':
-                era_agg = era_monthly_data[month_num].sum(dim=era_dims, skipna=True)
+                era_agg = era_monthly_data[month_num].sum(dim=era_dims, skipna=True) * 1000
                 conus_agg = conus_monthly_data[month_num].sum(dim=time_dim, skipna=True)
             else:
                 era_agg = era_monthly_data[month_num].mean(dim=era_dims, skipna=True)
@@ -357,9 +361,9 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
             conus_vals = get_clean_values(conus_agg)
             
             fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-            plot_box(axes[0], era_vals, conus_vals, ['ERA', 'C404'], global_min, global_max, title='Box Plot', ylabel=f'{era_var}')
-            plot_ecdf(axes[1], era_vals, conus_vals, global_min, global_max, title='ECDF')
-            plot_qq(axes[2], era_vals, conus_vals, 'ERA', 'C404', global_min, global_max, title='Q-Q Plot')
+            plot_box(axes[0], era_vals, conus_vals, ['ERA', 'C404'], global_min, global_max, title='Box Plot', ylabel=f'{era_var} ({unit})')
+            plot_ecdf(axes[1], era_vals, conus_vals, global_min, global_max, title='ECDF', unit_label=unit)
+            plot_qq(axes[2], era_vals, conus_vals, 'ERA', 'C404', global_min, global_max, title='Q-Q Plot', unit_label=unit)
             plt.suptitle(f'{month_name} Statistics - {era_var}', fontsize=16, fontweight='bold', y=0.98)
             plt.tight_layout()
             output_file = os.path.join(dirs['stats'], f'stats_{era_var}_month{month_num:02d}.png')
@@ -374,9 +378,8 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
             col_group = month_idx % 3
             era_dims = [d for d in era_monthly_data[month_num].dims if d in ['valid_time', 'time']]
             
-            # CHANGED: TP logic here too
             if era_var == 'tp':
-                era_agg = era_monthly_data[month_num].sum(dim=era_dims, skipna=True)
+                era_agg = era_monthly_data[month_num].sum(dim=era_dims, skipna=True) * 1000
                 conus_agg = conus_monthly_data[month_num].sum(dim=time_dim, skipna=True)
             else:
                 era_agg = era_monthly_data[month_num].mean(dim=era_dims, skipna=True)
@@ -385,9 +388,9 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
             era_vals = get_clean_values(era_agg)
             conus_vals = get_clean_values(conus_agg)
 
-            plot_box(axes[row, col_group*3], era_vals, conus_vals, ['ERA', 'C404'], global_min, global_max, title=f'{month_name}\nBox Plot', ylabel=f'{era_var}')
-            plot_ecdf(axes[row, col_group*3+1], era_vals, conus_vals, global_min, global_max, title='ECDF')
-            plot_qq(axes[row, col_group*3+2], era_vals, conus_vals, 'ERA', 'C404', global_min, global_max, title='Q-Q Plot')
+            plot_box(axes[row, col_group*3], era_vals, conus_vals, ['ERA', 'C404'], global_min, global_max, title=f'{month_name}\nBox Plot', ylabel=f'{era_var} ({unit})')
+            plot_ecdf(axes[row, col_group*3+1], era_vals, conus_vals, global_min, global_max, title='ECDF', unit_label=unit)
+            plot_qq(axes[row, col_group*3+2], era_vals, conus_vals, 'ERA', 'C404', global_min, global_max, title='Q-Q Plot', unit_label=unit)
         plt.suptitle(f'{era_var} Monthly Statistics', fontsize=20, fontweight='bold', y=0.98)
         plt.subplots_adjust(wspace=0.4, hspace=0.5, left=0.05, right=0.95, top=0.92, bottom=0.05)
         output_file = os.path.join(dirs['base'], f'stats_{era_var}_all_months.png')
@@ -397,6 +400,7 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
 def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, separate_images):
     print(f"Processing monthly time series: {era_var} vs {conus_var}...")
     time_dim = get_time_dimension(conus_ds)
+    unit = VARIABLE_UNITS.get(era_var, '')
     try: era_year = pd.to_datetime(era_ds.valid_time.values[0]).year
     except: era_year = "Unknown Year"
 
@@ -410,13 +414,23 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
                 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
                 era_times = pd.to_datetime(era_month.valid_time.values)
                 reduce_dims = [d for d in era_month.dims if d != 'valid_time']
-                axes[0].plot(era_times, era_month.mean(dim=reduce_dims, skipna=True), 'b-', linewidth=1.5)
-                axes[0].set_title('ERA5', fontsize=12); axes[0].grid(alpha=0.3); axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+                
+                # UNIT CONVERSION FOR TIMESERIES
+                era_ts_data = era_month.mean(dim=reduce_dims, skipna=True)
+                if era_var == 'tp':
+                    era_ts_data = era_ts_data * 1000
+                
+                axes[0].plot(era_times, era_ts_data, 'b-', linewidth=1.5)
+                axes[0].set_title('ERA5', fontsize=12); axes[0].grid(alpha=0.3)
+                axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+                axes[0].set_ylabel(f'{era_var} ({unit})')
                 
                 conus_times = pd.to_datetime(conus_month[time_dim].values)
                 spatial_dims = [d for d in conus_month.dims if d != time_dim]
                 axes[1].plot(conus_times, conus_month.mean(dim=spatial_dims, skipna=True), 'r-', linewidth=1.5)
-                axes[1].set_title('CONUS', fontsize=12); axes[1].grid(alpha=0.3); axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+                axes[1].set_title('CONUS', fontsize=12); axes[1].grid(alpha=0.3)
+                axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+                axes[1].set_ylabel(f'{era_var} ({unit})')
                 
                 plt.suptitle(f'{calendar.month_name[month_num]} Time Series - {era_var}', fontsize=16, fontweight='bold', y=0.98)
                 plt.savefig(os.path.join(dirs['timeseries'], f'timeseries_{era_var}_month{month_num:02d}.png'), dpi=300, bbox_inches='tight')
@@ -432,9 +446,15 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
                 conus_month = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month_num})
                 
                 era_times = pd.to_datetime(era_month.valid_time.values)
-                axes[row, col_group*2].plot(era_times, era_month.mean(dim=[d for d in era_month.dims if d != 'valid_time'], skipna=True), 'b-')
+                
+                # UNIT CONVERSION FOR TIMESERIES (COMPACT)
+                era_ts_data = era_month.mean(dim=[d for d in era_month.dims if d != 'valid_time'], skipna=True)
+                if era_var == 'tp': era_ts_data = era_ts_data * 1000
+
+                axes[row, col_group*2].plot(era_times, era_ts_data, 'b-')
                 axes[row, col_group*2].set_title(f'{calendar.month_name[month_num]}\nERA5', fontsize=10); axes[row, col_group*2].grid(alpha=0.3)
                 axes[row, col_group*2].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+                axes[row, col_group*2].set_ylabel(f'{unit}')
                 
                 conus_times = pd.to_datetime(conus_month[time_dim].values)
                 axes[row, col_group*2+1].plot(conus_times, conus_month.mean(dim=[d for d in conus_month.dims if d != time_dim], skipna=True), 'r-')
@@ -457,13 +477,13 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
 
     time_dim = get_time_dimension(conus_ds)
     lat_name, lon_name = get_coordinate_names(conus_ds)
+    unit = VARIABLE_UNITS.get(era_var, '')
     
     # Prepare Yearly Aggregates
     era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
     
-    # CHANGED: Logic for TP (Sum) vs others (Mean)
     if era_var == 'tp':
-        era_yearly_agg = era_ds[era_var].sum(dim=era_dims, skipna=True)
+        era_yearly_agg = era_ds[era_var].sum(dim=era_dims, skipna=True) * 1000
         conus_yearly_agg = conus_ds[conus_var].sum(dim=time_dim, skipna=True)
     else:
         era_yearly_agg = era_ds[era_var].mean(dim=era_dims, skipna=True)
@@ -484,9 +504,9 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     
     # Stats Plot
     fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-    plot_box(axes[0], era_vals, conus_vals, ['ERA', 'C404'], gmin, gmax, title='Yearly Box Plot', ylabel=era_var)
-    plot_ecdf(axes[1], era_vals, conus_vals, gmin, gmax, title='Yearly ECDF')
-    plot_qq(axes[2], era_vals, conus_vals, 'ERA', 'C404', gmin, gmax, title='Yearly Q-Q Plot')
+    plot_box(axes[0], era_vals, conus_vals, ['ERA', 'C404'], gmin, gmax, title='Yearly Box Plot', ylabel=f'{era_var} ({unit})')
+    plot_ecdf(axes[1], era_vals, conus_vals, gmin, gmax, title='Yearly ECDF', unit_label=unit)
+    plot_qq(axes[2], era_vals, conus_vals, 'ERA', 'C404', gmin, gmax, title='Yearly Q-Q Plot', unit_label=unit)
     plt.suptitle(f'Yearly Statistics - {era_var}', fontsize=16, fontweight='bold')
     plt.savefig(os.path.join(var_dir, f'stats_{era_var}_yearly.png'), dpi=300, bbox_inches='tight')
     plt.close()
@@ -506,7 +526,7 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     ax2.set_title('CONUS404 Yearly Agg', fontsize=12)
     
     cbar = fig.colorbar(p2, cax=fig.add_subplot(gs[2]), extend='both')
-    cbar.set_label(era_var, fontsize=10)
+    cbar.set_label(f'{era_var} ({unit})', fontsize=10)
     plt.suptitle(f'Yearly Agg Map - {era_var}', fontsize=16, fontweight='bold')
     plt.savefig(os.path.join(var_dir, f'map_{era_var}_yearly.png'), dpi=300, bbox_inches='tight')
     plt.close()
@@ -516,13 +536,17 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     
     era_times = pd.to_datetime(era_ds.valid_time.values)
     era_ts = era_ds[era_var].mean(dim=[d for d in era_ds[era_var].dims if d != 'valid_time'], skipna=True)
+    if era_var == 'tp': era_ts = era_ts * 1000 # Convert for TS
+    
     axes[0].plot(era_times, era_ts, 'b-', linewidth=1)
     axes[0].set_title('ERA5 Yearly TS'); axes[0].grid(alpha=0.3)
+    axes[0].set_ylabel(f'{unit}')
     
     conus_times = pd.to_datetime(conus_ds[get_time_dimension(conus_ds)].values)
     conus_ts = conus_ds[conus_var].mean(dim=[d for d in conus_ds[conus_var].dims if d != get_time_dimension(conus_ds)], skipna=True)
     axes[1].plot(conus_times, conus_ts, 'r-', linewidth=1)
     axes[1].set_title('CONUS404 Yearly TS'); axes[1].grid(alpha=0.3)
+    axes[1].set_ylabel(f'{unit}')
     
     plt.suptitle(f'Yearly Time Series - {era_var}', fontsize=16, fontweight='bold')
     plt.savefig(os.path.join(var_dir, f'timeseries_{era_var}_yearly.png'), dpi=300, bbox_inches='tight')
@@ -547,10 +571,11 @@ def generate_yearly_combined_summary(era_ds, conus_ds, variable_pairs, yearly_ba
 
     for i, (era_var, conus_var) in enumerate(variable_pairs.items()):
         era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
+        unit = VARIABLE_UNITS.get(era_var, '')
         
-        # CHANGED: Sum if tp, Mean otherwise
+        # CHECK: Sum & Convert for TP
         if era_var == 'tp':
-            era_mean = trim_to_us(era_ds[era_var].sum(dim=era_dims, skipna=True), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+            era_mean = trim_to_us(era_ds[era_var].sum(dim=era_dims, skipna=True) * 1000, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
             conus_mean = conus_ds[conus_var].sum(dim=time_dim, skipna=True)
         else:
             era_mean = trim_to_us(era_ds[era_var].mean(dim=era_dims, skipna=True), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
@@ -562,9 +587,9 @@ def generate_yearly_combined_summary(era_ds, conus_ds, variable_pairs, yearly_ba
         e_vals, c_vals = get_clean_values(era_mean), get_clean_values(conus_mean)
         gmin, gmax = min(e_vals.min(), c_vals.min()), max(e_vals.max(), c_vals.max())
         
-        plot_box(axes_stats[i, 0], e_vals, c_vals, ['ERA', 'C404'], gmin, gmax, title=f'{era_var} Box', ylabel=era_var)
-        plot_ecdf(axes_stats[i, 1], e_vals, c_vals, gmin, gmax, title=f'{era_var} ECDF')
-        plot_qq(axes_stats[i, 2], e_vals, c_vals, 'ERA', 'C404', gmin, gmax, title=f'{era_var} QQ')
+        plot_box(axes_stats[i, 0], e_vals, c_vals, ['ERA', 'C404'], gmin, gmax, title=f'{era_var} Box', ylabel=f'{era_var} ({unit})')
+        plot_ecdf(axes_stats[i, 1], e_vals, c_vals, gmin, gmax, title=f'{era_var} ECDF', unit_label=unit)
+        plot_qq(axes_stats[i, 2], e_vals, c_vals, 'ERA', 'C404', gmin, gmax, title=f'{era_var} QQ', unit_label=unit)
         
         ax_m1 = fig_maps.add_subplot(gs_maps[i, 0], projection=create_map_axis())
         ax_m1.pcolormesh(era_mean['longitude'], era_mean['latitude'], era_mean, transform=ccrs.PlateCarree(), cmap='RdYlBu_r', vmin=gmin, vmax=gmax, shading='auto')
@@ -574,13 +599,16 @@ def generate_yearly_combined_summary(era_ds, conus_ds, variable_pairs, yearly_ba
         p2 = ax_m2.pcolormesh(conus_mean[lon_name], conus_mean[lat_name], conus_mean, transform=ccrs.PlateCarree(), cmap='RdYlBu_r', vmin=gmin, vmax=gmax, shading='auto')
         add_map_features(ax_m2, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX); ax_m2.set_title(f'CONUS {conus_var}')
         
-        fig_maps.colorbar(p2, cax=fig_maps.add_subplot(gs_maps[i, 2]), extend='both').set_label(era_var)
+        fig_maps.colorbar(p2, cax=fig_maps.add_subplot(gs_maps[i, 2]), extend='both').set_label(f'{era_var} ({unit})')
         
         era_ts = era_ds[era_var].mean(dim=[d for d in era_ds[era_var].dims if d != 'valid_time'], skipna=True)
         conus_ts = conus_ds[conus_var].mean(dim=[d for d in conus_ds[conus_var].dims if d != time_dim], skipna=True)
-        
+        if era_var == 'tp': era_ts = era_ts * 1000
+
         axes_ts[i, 0].plot(pd.to_datetime(era_ds.valid_time.values), era_ts, 'b-'); axes_ts[i, 0].set_title(f'ERA5 {era_var} TS')
+        axes_ts[i, 0].set_ylabel(f'{unit}')
         axes_ts[i, 1].plot(pd.to_datetime(conus_ds[time_dim].values), conus_ts, 'r-'); axes_ts[i, 1].set_title(f'CONUS {conus_var} TS')
+        axes_ts[i, 1].set_ylabel(f'{unit}')
 
     fig_stats.suptitle('Yearly Stats Summary (All Vars)', fontweight='bold'); fig_stats.savefig(os.path.join(yearly_base_dir, 'summary_stats_yearly.png'), dpi=300, bbox_inches='tight'); plt.close(fig_stats)
     fig_maps.suptitle('Yearly Maps Summary (All Vars)', fontweight='bold'); fig_maps.savefig(os.path.join(yearly_base_dir, 'summary_maps_yearly.png'), dpi=300, bbox_inches='tight'); plt.close(fig_maps)
