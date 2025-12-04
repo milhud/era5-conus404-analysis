@@ -1,4 +1,4 @@
-#!/gpfsm/dnb33/hpmille1/venv/bin/python3
+#!/usr/local/other/GEOSpyD/24.3.0-0/2024-08-29/envs/py3.12/bin/python3
 
 import xarray as xr
 import matplotlib.pyplot as plt
