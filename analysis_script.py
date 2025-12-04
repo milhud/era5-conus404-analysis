@@ -18,19 +18,22 @@ import calendar
 warnings.filterwarnings("ignore")
 
 # Configuration
-ERA5_FILE = 'era5_2015.nc'
+ERA5_FILE = 'era5_2010.nc'
 CONUS_FILE = 'conus404_yearly_2010.nc'
 OUTPUT_DIR = 'comparison_plots'
 
-# Only processing t2m vs T2
+# ERA5 (key) : CONUS404 (value)
 VARIABLE_PAIRS = {
-    't2m': 'T2',
-    # 'd2m': 'TD2',
-    # 'tp': 'RAINNC',
-    # 'sp': 'PSFC',
-    # 'u10': 'U10',
-    # 'v10': 'V10',
+    't2m': 'T2',          # 2m Temperature
+    'd2m': 'TD2',         # 2m Dewpoint Temperature
+    'sp': 'PSFC',         # Surface Pressure
+    'u10': 'U10',         # 10m U-Wind Component
+    'v10': 'V10',         # 10m V-Wind Component
+    'lai': 'LAI',         # Leaf Area Index
+    'tp': 'ACRAINLSM',    # Total Precipitation (Note: check units, ERA5 is often 'm', WRF 'mm')
+    'z': 'Z',             # Geopotential / Geopotential Height
 }
+
 
 LAT_MIN, LAT_MAX = 24, 50
 LON_MIN, LON_MAX = -125, -66
