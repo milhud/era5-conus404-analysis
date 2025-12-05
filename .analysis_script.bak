@@ -603,6 +603,66 @@ def generate_seasonal_maps(era_ds, conus_ds, era_var, conus_var, dirs):
 def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
     print(f"Processing seasonal timeseries: {era_var} vs {conus_var}...")
 
+    time_dim = get_time_dimension(conus_ds)
+    try: era_year = pd.to_datetime(era_ds.valid_time.values[0]).year
+    except: era_year = "Unknown Year"
+
+    seasons = {
+        "Winter": [12, 1, 2],
+        "Spring": [3, 4, 5],
+        "Summer": [6, 7, 8],
+        "Autumn": [9, 10, 11]
+    }
+
+    for season_name, months in seasons.items():
+        try:
+            # Select seasonal data
+            era_season = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months))
+            conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
+
+            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+            # ERA5 + CONUS together
+            era_times = pd.to_datetime(era_season.valid_time.values)
+            reduce_dims = [d for d in era_season.dims if d != 'valid_time']
+            axes[0].plot(era_times, era_season.mean(dim=reduce_dims, skipna=True), 'b-', linewidth=1.5, label='ERA5')
+
+            conus_times = pd.to_datetime(conus_season[time_dim].values)
+            spatial_dims = [d for d in conus_season.dims if d != time_dim]
+            axes[0].plot(conus_times, conus_season.mean(dim=spatial_dims, skipna=True), 'r-', linewidth=1.5, label='CONUS')
+            axes[0].set_title(f'{season_name} Time Series', fontsize=12)
+            axes[0].grid(alpha=0.3)
+            axes[0].legend()
+
+            # Set x-axis ticks at the start of each month
+            start_year = era_times[0].year
+            months_ticks = pd.date_range(f'{start_year}-01-01', f'{start_year}-12-01', freq='MS')
+            axes[0].set_xticks(months_ticks)
+            axes[0].set_xticklabels([calendar.month_abbr[m.month] for m in months_ticks])
+
+            # Difference (ERA5 - CONUS)
+            # Align times if necessary
+            common_times = pd.to_datetime(
+                np.intersect1d(era_season.valid_time.values, conus_season[time_dim].values)
+            )
+            if len(common_times) > 0:
+                era_common = era_season.sel(valid_time=common_times)
+                conus_common = conus_season.sel({time_dim: common_times})
+                axes[1].plot(common_times,
+                             era_common.mean(dim=reduce_dims, skipna=True) - conus_common.mean(dim=spatial_dims, skipna=True),
+                             'k-', linewidth=1.5)
+            axes[1].set_title('Difference (ERA5 - CONUS)', fontsize=12)
+            axes[1].grid(alpha=0.3)
+            axes[1].set_xticks(months_ticks)
+            axes[1].set_xticklabels([calendar.month_abbr[m.month] for m in months_ticks])
+
+            plt.suptitle(f'{era_var} Seasonal Time Series', fontsize=16, fontweight='bold', y=0.98)
+            plt.savefig(os.path.join(dirs['timeseries'], f'timeseries_{era_var}_{season_name.lower()}.png'), dpi=300)
+            plt.close()
+        except KeyError:
+            continue
+
+
 # --- YEARLY GENERATION FUNCTIONS ---
 
 def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly_base_dir):
