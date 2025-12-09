@@ -136,6 +136,27 @@ def load_all_monthly_data(era_ds, conus_ds, era_var, conus_var):
     
     return era_monthly_data, conus_monthly_data
 
+def load_all_seasonal_data(era_ds, conus_ds, era_var, conus_var):
+    time_dim = get_time_dimension(conus_ds)
+    seasons = {"winter":[1,2,12],"spring":{3,4,5},"summer":{6,7,8},"autumn":{9,10,11}}
+
+    era_seasonal_data = {}
+    conus_seasonal_data = {}
+
+    for season, months in seasons:
+        if era_var not in era_ds:
+            raise KeyError(f"Variable {era_var} not found in ERA5 dataset")
+        if conus_var not in conus_ds:
+            raise KeyError(f"Variable {conus_var} not found in CONUS dataset")
+        
+        era_season = era_ds[era_var].sel(valid_time = era_ds.valid_time.dt.month.isin(months))
+        conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
+
+        era_seasonal_data[season] = era_season
+        conus_seasonal_data[season] = conus_season
+
+    return era_seasonal_data, conus_seasonal_data    
+
 def compute_global_limits(era_monthly_data, conus_monthly_data, era_var):
     """Computes global min/max with unit conversion for TP."""
     all_era_vals = []
