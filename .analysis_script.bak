@@ -125,6 +125,27 @@ def load_all_monthly_data(era_ds, conus_ds, era_var, conus_var):
     
     return era_monthly_data, conus_monthly_data
 
+def load_all_seasonal_data(era_ds, conus_ds, era_var, conus_var):
+    time_dim = get_time_dimension(conus_ds)
+    seasons = {"winter":[1,2,12],"spring":{3,4,5},"summer":{6,7,8},"autumn":{9,10,11}}
+
+    era_seasonal_data = {}
+    conus_seasonal_data = {}
+
+    for season, months in seasons:
+        if era_var not in era_ds:
+            raise KeyError(f"Variable {era_var} not found in ERA5 dataset")
+        if conus_var not in conus_ds:
+            raise KeyError(f"Variable {conus_var} not found in CONUS dataset")
+        
+        era_season = era_ds[era_var].sel(valid_time = era_ds.valid_time.dt.month.isin(months))
+        conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
+
+        era_seasonal_data[season] = era_season
+        conus_seasonal_data[season] = conus_season
+
+    return era_seasonal_data, conus_seasonal_data       
+
 def compute_global_limits(era_monthly_data, conus_monthly_data):
     all_era_vals = []
     all_conus_vals = []
@@ -398,6 +419,249 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
         plt.subplots_adjust(wspace=0.3, hspace=0.6, left=0.05, right=0.95, top=0.92, bottom=0.05)
         plt.savefig(os.path.join(dirs['base'], f'timeseries_{era_var}_all_months.png'), dpi=300)
         plt.close()
+
+# --- SEASONAL GENERATION FUNCTIONS ---
+
+def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
+    import matplotlib.patches as mpatches
+    print(f"Processing seasonal stats: {era_var} vs {conus_var}...")
+    
+    try:
+        era_seasonal_data, conus_seasonal_data = load_all_seasonal_data(era_ds, conus_ds, era_var, conus_var)
+    except KeyError as e:
+        print(f"  Skipping {era_var}/{conus_var}: {e}")
+        return
+
+    global_min, global_max = compute_global_limits(era_seasonal_data, conus_seasonal_data)
+    time_dim = get_time_dimension(conus_ds)
+
+    # Define season order
+    seasons = ["winter", "spring", "summer", "autumn"]
+
+    # Collect cleaned seasonal values
+    era_season_vals = []
+    conus_season_vals = []
+    season_labels = []
+
+    for season in seasons:
+        era_season = era_seasonal_data[season]
+        conus_season = conus_seasonal_data[season]
+
+        # Collapse time/spatial dims
+        era_dims = [d for d in era_season.dims if d in ['valid_time', 'time']]
+        conus_dims = [d for d in conus_season.dims if d == time_dim]
+
+        era_vals = get_clean_values(era_season.mean(dim=era_dims, skipna=True))
+        conus_vals = get_clean_values(conus_season.mean(dim=conus_dims, skipna=True))
+
+        era_season_vals.append(era_vals)
+        conus_season_vals.append(conus_vals)
+        season_labels.append(season.capitalize())
+
+        # --------------------------
+        # Plot all seasons in one boxplot
+        # --------------------------
+        fig, ax = plt.subplots(figsize=(10, 6))
+        width = 0.35  # width of each box
+        positions_era = [i - width/2 for i in range(1, 5)]
+        positions_conus = [i + width/2 for i in range(1, 5)]
+
+        # ERA boxes
+        b_era = ax.boxplot(era_season_vals, positions=positions_era, widths=width, patch_artist=True,
+                        showfliers=True, medianprops=dict(color='black'))
+        for patch in b_era['boxes']:
+            patch.set_facecolor('skyblue')
+
+        # CONUS boxes
+        b_conus = ax.boxplot(conus_season_vals, positions=positions_conus, widths=width, patch_artist=True,
+                            showfliers=True, medianprops=dict(color='black'))
+        for patch in b_conus['boxes']:
+            patch.set_facecolor('salmon')
+
+        # X-axis labels at the center of each season pair
+        ax.set_xticks(range(1, 5))
+        ax.set_xticklabels([s.capitalize() for s in seasons])
+
+        ax.set_ylabel(era_var)
+        ax.set_title(f'Seasonal Box Plot — {era_var}', fontsize=16, fontweight='bold')
+        ax.grid(alpha=0.3)
+
+        # Legend
+        era_patch = mpatches.Patch(facecolor='skyblue', label='ERA')
+        conus_patch = mpatches.Patch(facecolor='salmon', label='CONUS')
+        ax.legend(handles=[era_patch, conus_patch])
+
+        plt.tight_layout()
+        output_file = os.path.join(dirs['stats'], f'stats_{era_var}_seasonal_box.png')
+        plt.savefig(output_file, dpi=300)
+        plt.close()
+
+        # --------------------------
+        # ECDF Figure
+        # --------------------------
+        fig_ecdf, axes_ecdf = plt.subplots(2, 2, figsize=(12, 10))
+        axes_ecdf = axes_ecdf.flatten()
+
+        for i, season in enumerate(seasons):
+            plot_ecdf(axes_ecdf[i], era_season_vals[i], conus_season_vals[i],
+                    global_min, global_max, title=f'{season.capitalize()} ECDF')
+            if i == 0:  # add legend only once
+                axes_ecdf[i].legend(['ERA', 'CONUS'])
+
+        fig_ecdf.suptitle(f'Seasonal ECDF — {era_var}', fontsize=16, fontweight='bold', y=0.95)
+        plt.tight_layout(rect=[0,0,1,0.95])
+        output_file_ecdf = os.path.join(dirs['stats'], f'seasonal_ecdf_{era_var}.png')
+        plt.savefig(output_file_ecdf, dpi=300)
+        plt.close()
+
+        # --------------------------
+        # Q-Q Figure (2x2)
+        # --------------------------
+        fig_qq, axes_qq = plt.subplots(2, 2, figsize=(12, 10))
+        axes_qq = axes_qq.flatten()
+
+        for i, season in enumerate(seasons):
+            plot_qq(axes_qq[i], era_season_vals[i], conus_season_vals[i],
+                    'ERA', 'CONUS', global_min, global_max, title=f'{season.capitalize()} Q-Q')
+            if i == 0:  # add legend only once
+                axes_qq[i].legend(['ERA', 'CONUS'])
+
+        fig_qq.suptitle(f'Seasonal Q-Q — {era_var}', fontsize=16, fontweight='bold', y=0.95)
+        plt.tight_layout(rect=[0,0,1,0.95])
+        output_file_qq = os.path.join(dirs['stats'], f'seasonal_qq_{era_var}.png')
+        plt.savefig(output_file_qq, dpi=300)
+        plt.close()
+
+
+def generate_seasonal_maps(era_ds, conus_ds, era_var, conus_var, dirs):
+    print(f"Processing seasonal maps: {era_var} vs {conus_var}...")
+
+    time_dim, (lat_name, lon_name) = get_time_dimension(conus_ds), get_coordinate_names(conus_ds)
+    
+    # Calculate GLOBAL limits first
+    all_temps = []
+    for month in range(1, 13):
+        era_dims = [d for d in era_ds['t2m'].dims if d in ['valid_time', 'time']]
+        era_month = trim_to_us(era_ds['t2m'].sel(valid_time=era_ds.valid_time.dt.month == month).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        conus_month = trim_to_us(conus_ds['T2'].sel({time_dim: conus_ds[time_dim].dt.month == month}).mean(dim=time_dim), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
+        all_temps.extend([float(era_month.min()), float(era_month.max()), float(conus_month.min()), float(conus_month.max())])
+    vmin, vmax = min(all_temps), max(all_temps)
+
+    seasons = {
+        "Winter": [12, 1, 2],
+        "Spring": [3, 4, 5],
+        "Summer": [6, 7, 8],
+        "Autumn": [9, 10, 11]
+    }
+
+    # Plot seasonal maps
+    for season_name, months in seasons.items():
+        fig = plt.figure(figsize=(15, 6))
+        gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.1)
+
+        # ERA seasonal mean
+        era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
+        era_season = trim_to_us(
+            era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months)).mean(dim=era_dims),
+            LAT_MIN, LAT_MAX, LON_MIN, LON_MAX
+        )
+
+        ax1 = fig.add_subplot(gs[0], projection=create_map_axis())
+        ax1.pcolormesh(
+            era_season['longitude'], era_season['latitude'], era_season,
+            transform=ccrs.PlateCarree(), cmap='RdYlBu_r', vmin=vmin, vmax=vmax, shading='auto'
+        )
+        add_map_features(ax1, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX)
+        ax1.set_title(f'ERA5 {era_var}', fontsize=12)
+
+        # CONUS seasonal mean
+        conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)}).mean(dim=time_dim)
+        if lat_name in conus_ds and lon_name in conus_ds:
+            conus_season = conus_season.assign_coords({lat_name: conus_ds[lat_name], lon_name: conus_ds[lon_name]})
+        conus_season = trim_to_us(
+            conus_season, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+            lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
+        )
+
+        ax2 = fig.add_subplot(gs[1], projection=create_map_axis())
+        p2 = ax2.pcolormesh(
+            conus_season[lon_name], conus_season[lat_name], conus_season,
+            transform=ccrs.PlateCarree(), cmap='RdYlBu_r', vmin=vmin, vmax=vmax, shading='auto'
+        )
+        add_map_features(ax2, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX)
+        ax2.set_title(f'CONUS404 {conus_var}', fontsize=12)
+
+        # Colorbar
+        cbar = fig.colorbar(p2, cax=fig.add_subplot(gs[2]), extend='both')
+        cbar.set_label(f'{era_var} / {conus_var} units', fontsize=10)
+
+        plt.suptitle(f'{season_name} {era_var} vs {conus_var} Comparison', fontsize=16, fontweight='bold', y=0.95)
+        output_file = os.path.join(dirs['maps'], f'map_{era_var}_{season_name.lower()}.png')
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close()
+    
+def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
+    print(f"Processing seasonal timeseries: {era_var} vs {conus_var}...")
+
+    time_dim = get_time_dimension(conus_ds)
+    try: era_year = pd.to_datetime(era_ds.valid_time.values[0]).year
+    except: era_year = "Unknown Year"
+
+    seasons = {
+        "Winter": [12, 1, 2],
+        "Spring": [3, 4, 5],
+        "Summer": [6, 7, 8],
+        "Autumn": [9, 10, 11]
+    }
+
+    for season_name, months in seasons.items():
+        try:
+            # Select seasonal data
+            era_season = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months))
+            conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
+
+            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+            # ERA5 + CONUS together
+            era_times = pd.to_datetime(era_season.valid_time.values)
+            reduce_dims = [d for d in era_season.dims if d != 'valid_time']
+            axes[0].plot(era_times, era_season.mean(dim=reduce_dims, skipna=True), 'b-', linewidth=1.5, label='ERA5')
+
+            conus_times = pd.to_datetime(conus_season[time_dim].values)
+            spatial_dims = [d for d in conus_season.dims if d != time_dim]
+            axes[0].plot(conus_times, conus_season.mean(dim=spatial_dims, skipna=True), 'r-', linewidth=1.5, label='CONUS')
+            axes[0].set_title(f'{season_name} Time Series', fontsize=12)
+            axes[0].grid(alpha=0.3)
+            axes[0].legend()
+
+            # Set x-axis ticks at the start of each month
+            start_year = era_times[0].year
+            months_ticks = pd.date_range(f'{start_year}-01-01', f'{start_year}-12-01', freq='MS')
+            axes[0].set_xticks(months_ticks)
+            axes[0].set_xticklabels([calendar.month_abbr[m.month] for m in months_ticks])
+
+            # Difference (ERA5 - CONUS)
+            # Align times if necessary
+            common_times = pd.to_datetime(
+                np.intersect1d(era_season.valid_time.values, conus_season[time_dim].values)
+            )
+            if len(common_times) > 0:
+                era_common = era_season.sel(valid_time=common_times)
+                conus_common = conus_season.sel({time_dim: common_times})
+                axes[1].plot(common_times,
+                             era_common.mean(dim=reduce_dims, skipna=True) - conus_common.mean(dim=spatial_dims, skipna=True),
+                             'k-', linewidth=1.5)
+            axes[1].set_title('Difference (ERA5 - CONUS)', fontsize=12)
+            axes[1].grid(alpha=0.3)
+            axes[1].set_xticks(months_ticks)
+            axes[1].set_xticklabels([calendar.month_abbr[m.month] for m in months_ticks])
+
+            plt.suptitle(f'{era_var} Seasonal Time Series', fontsize=16, fontweight='bold', y=0.98)
+            plt.savefig(os.path.join(dirs['timeseries'], f'timeseries_{era_var}_{season_name.lower()}.png'), dpi=300)
+            plt.close()
+        except KeyError:
+            continue
+
 
 # --- YEARLY GENERATION FUNCTIONS ---
 
