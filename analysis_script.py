@@ -24,13 +24,13 @@ OUTPUT_DIR = 'comparison_plots'
 
 # ERA5 (key) : CONUS404 (value)
 VARIABLE_PAIRS = {
-    't2m': 'T2',          # 2m Temperature
-    'd2m': 'TD2',         # 2m Dewpoint Temperature
-    'sp': 'PSFC',         # Surface Pressure
-    'u10': 'U10',         # 10m U-Wind Component
-    'v10': 'V10',         # 10m V-Wind Component
-    'lai': 'LAI',         # Leaf Area Index
-    'tp': 'ACRAINLSM',    # Total Precipitation
+    't2m': 'T2'#,          # 2m Temperature
+    #'d2m': 'TD2',         # 2m Dewpoint Temperature
+    #'sp': 'PSFC',         # Surface Pressure
+    #'u10': 'U10',         # 10m U-Wind Component
+    #'v10': 'V10',         # 10m V-Wind Component
+    #'lai': 'LAI',         # Leaf Area Index
+    #'tp': 'ACRAINLSM',    # Total Precipitation
     # 'z': 'Z',             # Geopotential (Commented out)
 }
 
@@ -877,7 +877,7 @@ def main():
 
     # 4 Seasonal
     for era_var, conus_var in VARIABLE_PAIRS.items():
-        dirs = setup_directories(OUTPUT_DIR, era_var, separateMode=False)
+        dirs = setup_directories(OUTPUT_DIR, era_var, SEPARATE_IMAGES)
         generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs)
         generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs)
     
