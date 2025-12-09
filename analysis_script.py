@@ -451,75 +451,56 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var,
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.close()
 
-def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, separate_images):
+def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, separate_mode):
+    """Generate monthly timeseries with both datasets on the same axis."""
     print(f"Processing monthly time series: {era_var} vs {conus_var}...")
+    
     time_dim = get_time_dimension(conus_ds)
+    lat_name, lon_name = get_coordinate_names(conus_ds)
     unit = VARIABLE_UNITS.get(era_var, '')
-    try: era_year = pd.to_datetime(era_ds.valid_time.values[0]).year
-    except: era_year = "Unknown Year"
-
-    if separate_images:
-        for month_idx in range(12):
-            month_num = month_idx + 1
-            try:
-                era_month = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month_num)
-                conus_month = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month_num})
-                
-                fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-                era_times = pd.to_datetime(era_month.valid_time.values)
-                reduce_dims = [d for d in era_month.dims if d != 'valid_time']
-                
-                # UNIT CONVERSION FOR TIMESERIES
-                era_ts_data = era_month.mean(dim=reduce_dims, skipna=True)
-                if era_var == 'tp':
-                    era_ts_data = era_ts_data * 1000
-                
-                axes[0].plot(era_times, era_ts_data, 'b-', linewidth=1.5)
-                axes[0].set_title('ERA5', fontsize=12); axes[0].grid(alpha=0.3)
-                axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-                axes[0].set_ylabel(f'{era_var} ({unit})')
-                
-                conus_times = pd.to_datetime(conus_month[time_dim].values)
-                spatial_dims = [d for d in conus_month.dims if d != time_dim]
-                axes[1].plot(conus_times, conus_month.mean(dim=spatial_dims, skipna=True), 'r-', linewidth=1.5)
-                axes[1].set_title('CONUS', fontsize=12); axes[1].grid(alpha=0.3)
-                axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-                axes[1].set_ylabel(f'{era_var} ({unit})')
-                
-                plt.suptitle(f'{calendar.month_name[month_num]} Time Series - {era_var}', fontsize=16, fontweight='bold', y=0.98)
-                plt.savefig(os.path.join(dirs['timeseries'], f'timeseries_{era_var}_month{month_num:02d}.png'), dpi=300, bbox_inches='tight')
-                plt.close()
-            except KeyError: continue
-    else:
-        fig, axes = plt.subplots(4, 6, figsize=(24, 12))
-        for month_idx in range(12):
-            month_num = month_idx + 1
-            row, col_group = month_idx // 3, month_idx % 3
-            try:
-                era_month = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month_num)
-                conus_month = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month_num})
-                
-                era_times = pd.to_datetime(era_month.valid_time.values)
-                
-                # UNIT CONVERSION FOR TIMESERIES (COMPACT)
-                era_ts_data = era_month.mean(dim=[d for d in era_month.dims if d != 'valid_time'], skipna=True)
-                if era_var == 'tp': era_ts_data = era_ts_data * 1000
-
-                axes[row, col_group*2].plot(era_times, era_ts_data, 'b-')
-                axes[row, col_group*2].set_title(f'{calendar.month_name[month_num]}\nERA5', fontsize=10); axes[row, col_group*2].grid(alpha=0.3)
-                axes[row, col_group*2].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-                axes[row, col_group*2].set_ylabel(f'{unit}')
-                
-                conus_times = pd.to_datetime(conus_month[time_dim].values)
-                axes[row, col_group*2+1].plot(conus_times, conus_month.mean(dim=[d for d in conus_month.dims if d != time_dim], skipna=True), 'r-')
-                axes[row, col_group*2+1].set_title(f'{calendar.month_name[month_num]}\nCONUS', fontsize=10); axes[row, col_group*2+1].grid(alpha=0.3)
-                axes[row, col_group*2+1].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-            except KeyError: continue
-        plt.suptitle(f'{era_var} vs {conus_var} Monthly Time Series ({era_year})', fontsize=20, fontweight='bold', y=0.98)
-        plt.subplots_adjust(wspace=0.3, hspace=0.6, left=0.05, right=0.95, top=0.92, bottom=0.05)
-        plt.savefig(os.path.join(dirs['base'], f'timeseries_{era_var}_all_months.png'), dpi=300, bbox_inches='tight')
+    
+    for month in range(1, 13):
+        # ERA5 monthly timeseries
+        era_month = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month)
+        era_trimmed = trim_to_us(era_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_ts = era_trimmed.mean(dim=['latitude', 'longitude'])
+        era_times = pd.to_datetime(era_ts.valid_time.values)
+        era_values = era_ts.values
+        
+        # CONUS monthly timeseries
+        conus_month = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month})
+        conus_trimmed = trim_to_us(
+            conus_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+            lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
+        )
+        conus_ts = conus_trimmed.mean(dim=[lat_name, lon_name])
+        conus_times = pd.to_datetime(conus_ts[time_dim].values)
+        conus_values = conus_ts.values
+        
+        # Create single plot with both timeseries
+        fig, ax = plt.subplots(figsize=(14, 6))
+        
+        # Plot both on same axis
+        ax.plot(era_times, era_values, 'o-', linewidth=2, markersize=4, 
+                label='ERA5', color='#2E86AB', alpha=0.8)
+        ax.plot(conus_times, conus_values, 's-', linewidth=2, markersize=4, 
+                label='CONUS404', color='#A23B72', alpha=0.8)
+        
+        # Formatting
+        month_name = pd.to_datetime(f'2000-{month:02d}-01').strftime('%B')
+        ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+        ax.set_ylabel(f'{era_var} ({unit})', fontsize=12, fontweight='bold')
+        ax.set_title(f'{month_name} Timeseries: {era_var} vs {conus_var}', 
+                     fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax.set_facecolor('#f8f9fa')
+        
+        plt.tight_layout()
+        output_file = os.path.join(dirs['timeseries'], f'timeseries_{era_var}_month{month:02d}.png')
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.close()
-
+        
 # --- SEASONAL GENERATION FUNCTIONS ---
 
 def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
@@ -701,12 +682,13 @@ def generate_seasonal_maps(era_ds, conus_ds, era_var, conus_var, dirs):
         plt.close()
     
 def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
+    """Generate seasonal timeseries with both datasets on the same axis."""
     print(f"Processing seasonal timeseries: {era_var} vs {conus_var}...")
 
     time_dim = get_time_dimension(conus_ds)
-    try: era_year = pd.to_datetime(era_ds.valid_time.values[0]).year
-    except: era_year = "Unknown Year"
-
+    lat_name, lon_name = get_coordinate_names(conus_ds)
+    unit = VARIABLE_UNITS.get(era_var, '')
+    
     seasons = {
         "Winter": [12, 1, 2],
         "Spring": [3, 4, 5],
@@ -715,54 +697,47 @@ def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
     }
 
     for season_name, months in seasons.items():
-        try:
-            # Select seasonal data
-            era_season = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months))
-            conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
+        # ERA5 seasonal timeseries - filter by month, then get spatial mean
+        era_seasonal = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months))
+        era_trimmed = trim_to_us(era_seasonal, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_ts = era_trimmed.mean(dim=['latitude', 'longitude'])
+        era_times = pd.to_datetime(era_ts.valid_time.values)
+        era_values = era_ts.values
+        
+        # CONUS seasonal timeseries - filter by month, then get spatial mean
+        conus_seasonal = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
+        conus_trimmed = trim_to_us(
+            conus_seasonal, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+            lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
+        )
+        conus_ts = conus_trimmed.mean(dim=[lat_name, lon_name])
+        conus_times = pd.to_datetime(conus_ts[time_dim].values)
+        conus_values = conus_ts.values
+        
+        # Create single plot with both timeseries
+        fig, ax = plt.subplots(figsize=(14, 6))
+        
+        # Plot both on same axis
+        ax.plot(era_times, era_values, 'o-', linewidth=2, markersize=4, 
+                label='ERA5', color='#2E86AB', alpha=0.8)
+        ax.plot(conus_times, conus_values, 's-', linewidth=2, markersize=4, 
+                label='CONUS404', color='#A23B72', alpha=0.8)
+        
+        # Formatting
+        ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+        ax.set_ylabel(f'{era_var} ({unit})', fontsize=12, fontweight='bold')
+        ax.set_title(f'{season_name} Timeseries: {era_var} vs {conus_var}', 
+                     fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.legend(loc='best', fontsize=11, framealpha=0.9)
+        ax.set_facecolor('#f8f9fa')
+        
+        plt.tight_layout()
+        output_file = os.path.join(dirs['timeseries'], f'timeseries_{era_var}_{season_name.lower()}.png')
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"  Saved: {output_file}")
 
-            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-
-            # ERA5 + CONUS together
-            era_times = pd.to_datetime(era_season.valid_time.values)
-            reduce_dims = [d for d in era_season.dims if d != 'valid_time']
-            axes[0].plot(era_times, era_season.mean(dim=reduce_dims, skipna=True), 'b-', linewidth=1.5, label='ERA5')
-
-            conus_times = pd.to_datetime(conus_season[time_dim].values)
-            spatial_dims = [d for d in conus_season.dims if d != time_dim]
-            axes[0].plot(conus_times, conus_season.mean(dim=spatial_dims, skipna=True), 'r-', linewidth=1.5, label='CONUS')
-            axes[0].set_title(f'{season_name} Time Series', fontsize=12)
-            axes[0].grid(alpha=0.3)
-            axes[0].legend()
-
-            # Set x-axis ticks at the start of each month
-            start_year = era_times[0].year
-            months_ticks = pd.date_range(f'{start_year}-01-01', f'{start_year}-12-01', freq='MS')
-            axes[0].set_xticks(months_ticks)
-            axes[0].set_xticklabels([calendar.month_abbr[m.month] for m in months_ticks])
-
-            # Difference (ERA5 - CONUS)
-            # Align times if necessary
-            common_times = pd.to_datetime(
-                np.intersect1d(era_season.valid_time.values, conus_season[time_dim].values)
-            )
-            if len(common_times) > 0:
-                era_common = era_season.sel(valid_time=common_times)
-                conus_common = conus_season.sel({time_dim: common_times})
-                axes[1].plot(common_times,
-                             era_common.mean(dim=reduce_dims, skipna=True) - conus_common.mean(dim=spatial_dims, skipna=True),
-                             'k-', linewidth=1.5)
-            axes[1].set_title('Difference (ERA5 - CONUS)', fontsize=12)
-            axes[1].grid(alpha=0.3)
-            axes[1].set_xticks(months_ticks)
-            axes[1].set_xticklabels([calendar.month_abbr[m.month] for m in months_ticks])
-
-            plt.suptitle(f'{era_var} Seasonal Time Series', fontsize=16, fontweight='bold', y=0.98)
-            plt.savefig(os.path.join(dirs['timeseries'], f'timeseries_{era_var}_{season_name.lower()}.png'), dpi=300)
-            plt.close()
-        except KeyError:
-            continue
-
-# --- YEARLY GENERATION FUNCTIONS ---
 
 def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly_base_dir):
     """Generates Stats, Maps, and Timeseries for the FULL YEAR for a single variable."""
@@ -770,7 +745,6 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     
     var_dir = os.path.join(yearly_base_dir, era_var)
     Path(var_dir).mkdir(exist_ok=True)
-
     time_dim = get_time_dimension(conus_ds)
     lat_name, lon_name = get_coordinate_names(conus_ds)
     unit = VARIABLE_UNITS.get(era_var, '')
@@ -827,24 +801,31 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     plt.savefig(os.path.join(var_dir, f'map_{era_var}_yearly.png'), dpi=300, bbox_inches='tight')
     plt.close()
     
-    # Time Series Plot
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    # Time Series Plot - COMBINED ON SAME AXIS
+    fig, ax = plt.subplots(figsize=(14, 6))
     
     era_times = pd.to_datetime(era_ds.valid_time.values)
     era_ts = era_ds[era_var].mean(dim=[d for d in era_ds[era_var].dims if d != 'valid_time'], skipna=True)
-    if era_var == 'tp': era_ts = era_ts * 1000 # Convert for TS
-    
-    axes[0].plot(era_times, era_ts, 'b-', linewidth=1)
-    axes[0].set_title('ERA5 Yearly TS'); axes[0].grid(alpha=0.3)
-    axes[0].set_ylabel(f'{unit}')
+    if era_var == 'tp': 
+        era_ts = era_ts * 1000
     
     conus_times = pd.to_datetime(conus_ds[get_time_dimension(conus_ds)].values)
     conus_ts = conus_ds[conus_var].mean(dim=[d for d in conus_ds[conus_var].dims if d != get_time_dimension(conus_ds)], skipna=True)
-    axes[1].plot(conus_times, conus_ts, 'r-', linewidth=1)
-    axes[1].set_title('CONUS404 Yearly TS'); axes[1].grid(alpha=0.3)
-    axes[1].set_ylabel(f'{unit}')
     
-    plt.suptitle(f'Yearly Time Series - {era_var}', fontsize=16, fontweight='bold')
+    # Plot both on same axis
+    ax.plot(era_times, era_ts, 'o-', linewidth=2, markersize=4, label='ERA5', 
+            color='#2E86AB', alpha=0.8)
+    ax.plot(conus_times, conus_ts, 's-', linewidth=2, markersize=4, label='CONUS404', 
+            color='#A23B72', alpha=0.8)
+    
+    ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+    ax.set_ylabel(f'{era_var} ({unit})', fontsize=12, fontweight='bold')
+    ax.set_title(f'Yearly Time Series - {era_var} vs {conus_var}', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3, linestyle='--')
+    ax.legend(loc='best', fontsize=11, framealpha=0.9)
+    ax.set_facecolor('#f8f9fa')
+    
+    plt.tight_layout()
     plt.savefig(os.path.join(var_dir, f'timeseries_{era_var}_yearly.png'), dpi=300, bbox_inches='tight')
     plt.close()
 
