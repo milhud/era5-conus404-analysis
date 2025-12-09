@@ -662,11 +662,27 @@ def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var, dirs
 
 
 def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
-    """Generates monthly timeseries overlays on the same graph with robust dimension handling."""
+    """Generates monthly timeseries overlays with corrected time dimension handling."""
     print(f"Processing monthly timeseries: {era_var} vs {conus_var}...")
     
-    conus_time_dim = get_time_dimension(conus_ds)
-    era_time_dim = get_time_dimension(era_ds) # likely 'valid_time' or 'time'
+    # --- ERA5 Time Detection ---
+    # ERA5 usually uses 'valid_time'. We prioritize that.
+    if 'valid_time' in era_ds:
+        era_time_dim = 'valid_time'
+    elif 'time' in era_ds:
+        era_time_dim = 'time'
+    else:
+        era_time_dim = list(era_ds.dims)[0] # Fallback
+        
+    # --- CONUS Time Detection ---
+    # CONUS404 usually uses 'Time' or 'time'
+    if 'Time' in conus_ds:
+        conus_time_dim = 'Time'
+    elif 'time' in conus_ds:
+        conus_time_dim = 'time'
+    else:
+        conus_time_dim = list(conus_ds.dims)[0]
+
     lat_name, lon_name = get_coordinate_names(conus_ds)
     unit = VARIABLE_UNITS.get(era_var, '')
     
@@ -674,55 +690,50 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
         month_name = calendar.month_name[month]
         
         # --- 1. ERA5 Data ---
-        # Select specific month
-        era_month = era_ds[era_var].sel({era_time_dim: era_ds[era_time_dim].dt.month == month})
+        # Robustly select month using the identified time dim
+        try:
+            era_month = era_ds[era_var].sel({era_time_dim: era_ds[era_time_dim].dt.month == month})
+        except AttributeError:
+            # Fallback if .dt fails (e.g. not decoded); try standard index selection
+            # assuming decoded times, but if not, this block prevents crash
+            print(f"Warning: Could not access .dt on {era_time_dim}. Ensure data is decoded.")
+            continue
+
         era_trimmed = trim_to_us(era_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
         
-        # Identify all dims that are NOT time and average over them
+        # Collapse all non-time dimensions
         era_reduce_dims = [d for d in era_trimmed.dims if d != era_time_dim]
         era_ts = era_trimmed.mean(dim=era_reduce_dims)
         
         era_times = pd.to_datetime(era_ts[era_time_dim].values)
         era_values = era_ts.values
-        
-        # Force squeeze if extra singleton dimensions exist
-        if era_values.ndim > 1:
-            era_values = era_values.squeeze()
+        if era_values.ndim > 1: era_values = era_values.squeeze()
 
         # --- 2. CONUS Data ---
-        # Select specific month
         conus_month = conus_ds[conus_var].sel({conus_time_dim: conus_ds[conus_time_dim].dt.month == month})
         conus_trimmed = trim_to_us(conus_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
                                    lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
         
-        # Identify all dims that are NOT time and average over them
+        # Collapse all non-time dimensions
         conus_reduce_dims = [d for d in conus_trimmed.dims if d != conus_time_dim]
         conus_ts = conus_trimmed.mean(dim=conus_reduce_dims)
         
         conus_times = pd.to_datetime(conus_ts[conus_time_dim].values)
         conus_values = conus_ts.values
-        
-        # Force squeeze if extra singleton dimensions exist
-        if conus_values.ndim > 1:
-            conus_values = conus_values.squeeze()
+        if conus_values.ndim > 1: conus_values = conus_values.squeeze()
 
         # --- 3. Plotting ---
         fig, ax = plt.subplots(figsize=(14, 6))
         
-        # ERA5 Line
         ax.plot(era_times, era_values, '-', linewidth=2, label='ERA5', color='royalblue', alpha=0.8)
-        
-        # CONUS Line
         ax.plot(conus_times, conus_values, '--', linewidth=2, label='CONUS404', color='crimson', alpha=0.8)
         
-        # Formatting
         ax.set_title(f'{month_name} Timeseries Comparison: {era_var} vs {conus_var}', fontsize=14, fontweight='bold')
         ax.set_xlabel('Date', fontsize=12)
         ax.set_ylabel(f'{era_var} ({unit})', fontsize=12)
         ax.legend(loc='upper right', fontsize=12, frameon=True, shadow=True)
         ax.grid(True, linestyle=':', alpha=0.6)
         
-        # Format X-Axis
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%d'))
         ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
         ax.set_xlabel(f'Day of {month_name}')
@@ -734,11 +745,13 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
 
 
 def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
-    """Generate seasonal timeseries with robust dimension handling."""
+    """Generate seasonal timeseries with robust time dimension handling."""
     print(f"Processing seasonal timeseries: {era_var} vs {conus_var}...")
 
-    conus_time_dim = get_time_dimension(conus_ds)
-    era_time_dim = get_time_dimension(era_ds)
+    # Explicit Time Dim Detection
+    era_time_dim = 'valid_time' if 'valid_time' in era_ds else 'time'
+    conus_time_dim = 'Time' if 'Time' in conus_ds else 'time'
+    
     lat_name, lon_name = get_coordinate_names(conus_ds)
     unit = VARIABLE_UNITS.get(era_var, '')
     
@@ -754,12 +767,12 @@ def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
         era_seasonal = era_ds[era_var].sel({era_time_dim: era_ds[era_time_dim].dt.month.isin(months)})
         era_trimmed = trim_to_us(era_seasonal, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
         
-        # Collapse all non-time dimensions
         era_reduce_dims = [d for d in era_trimmed.dims if d != era_time_dim]
         era_ts = era_trimmed.mean(dim=era_reduce_dims)
         
         era_times = pd.to_datetime(era_ts[era_time_dim].values)
-        era_values = era_ts.values.squeeze()
+        era_values = era_ts.values
+        if era_values.ndim > 1: era_values = era_values.squeeze()
         
         # --- CONUS ---
         conus_seasonal = conus_ds[conus_var].sel({conus_time_dim: conus_ds[conus_time_dim].dt.month.isin(months)})
@@ -768,12 +781,12 @@ def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
             lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
         )
         
-        # Collapse all non-time dimensions
         conus_reduce_dims = [d for d in conus_trimmed.dims if d != conus_time_dim]
         conus_ts = conus_trimmed.mean(dim=conus_reduce_dims)
 
         conus_times = pd.to_datetime(conus_ts[conus_time_dim].values)
-        conus_values = conus_ts.values.squeeze()
+        conus_values = conus_ts.values
+        if conus_values.ndim > 1: conus_values = conus_values.squeeze()
         
         # --- Plotting ---
         fig, ax = plt.subplots(figsize=(14, 6))
