@@ -460,39 +460,35 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
     unit = VARIABLE_UNITS.get(era_var, '')
     
     for month in range(1, 13):
-        # ERA5 monthly timeseries
+        # --- ERA5 PREPARATION ---
         era_month = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month)
         era_trimmed = trim_to_us(era_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
         
-        # ERA5 usually has 'latitude' and 'longitude' as dimensions, so this often works,
-        # but determining dynamically is safer:
-        era_spatial_dims = [d for d in era_trimmed.dims if d not in ['valid_time', 'time']]
-        era_ts = era_trimmed.mean(dim=era_spatial_dims)
+        # Robustly identify dims to reduce: All dims that are NOT time/valid_time
+        # This handles unexpected dims like 'expver', 'number', or 'level' automatically
+        era_reduce_dims = [d for d in era_trimmed.dims if d not in ['valid_time', 'time']]
+        era_ts = era_trimmed.mean(dim=era_reduce_dims)
         
         era_times = pd.to_datetime(era_ts.valid_time.values)
         era_values = era_ts.values
         
-        # CONUS monthly timeseries
+        # --- CONUS PREPARATION ---
         conus_month = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month})
         conus_trimmed = trim_to_us(
             conus_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
             lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
         )
         
-        # --- FIX STARTS HERE ---
-        # Identify dimensions to reduce over (exclude time)
-        # This handles cases where dims are ('south_north', 'west_east') instead of ('lat', 'lon')
-        conus_spatial_dims = [d for d in conus_trimmed.dims if d != time_dim]
-        conus_ts = conus_trimmed.mean(dim=conus_spatial_dims)
-        # --- FIX ENDS HERE ---
-
+        # Robustly identify dims to reduce for CONUS as well
+        conus_reduce_dims = [d for d in conus_trimmed.dims if d != time_dim]
+        conus_ts = conus_trimmed.mean(dim=conus_reduce_dims)
+        
         conus_times = pd.to_datetime(conus_ts[time_dim].values)
         conus_values = conus_ts.values
         
-        # Create single plot with both timeseries
+        # --- PLOTTING ---
         fig, ax = plt.subplots(figsize=(14, 6))
         
-        # Plot both on same axis
         ax.plot(era_times, era_values, 'o-', linewidth=2, markersize=4, 
                 label='ERA5', color='#2E86AB', alpha=0.8)
         ax.plot(conus_times, conus_values, 's-', linewidth=2, markersize=4, 
@@ -512,7 +508,6 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
         output_file = os.path.join(dirs['timeseries'], f'timeseries_{era_var}_month{month:02d}.png')
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.close()
-# --- SEASONAL GENERATION FUNCTIONS ---
 
 def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
     import matplotlib.patches as mpatches
