@@ -463,7 +463,12 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
         # ERA5 monthly timeseries
         era_month = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month)
         era_trimmed = trim_to_us(era_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
-        era_ts = era_trimmed.mean(dim=['latitude', 'longitude'])
+        
+        # ERA5 usually has 'latitude' and 'longitude' as dimensions, so this often works,
+        # but determining dynamically is safer:
+        era_spatial_dims = [d for d in era_trimmed.dims if d not in ['valid_time', 'time']]
+        era_ts = era_trimmed.mean(dim=era_spatial_dims)
+        
         era_times = pd.to_datetime(era_ts.valid_time.values)
         era_values = era_ts.values
         
@@ -473,7 +478,14 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
             conus_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
             lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
         )
-        conus_ts = conus_trimmed.mean(dim=[lat_name, lon_name])
+        
+        # --- FIX STARTS HERE ---
+        # Identify dimensions to reduce over (exclude time)
+        # This handles cases where dims are ('south_north', 'west_east') instead of ('lat', 'lon')
+        conus_spatial_dims = [d for d in conus_trimmed.dims if d != time_dim]
+        conus_ts = conus_trimmed.mean(dim=conus_spatial_dims)
+        # --- FIX ENDS HERE ---
+
         conus_times = pd.to_datetime(conus_ts[time_dim].values)
         conus_values = conus_ts.values
         
@@ -500,7 +512,6 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs, sepa
         output_file = os.path.join(dirs['timeseries'], f'timeseries_{era_var}_month{month:02d}.png')
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.close()
-        
 # --- SEASONAL GENERATION FUNCTIONS ---
 
 def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
@@ -697,20 +708,29 @@ def generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
     }
 
     for season_name, months in seasons.items():
-        # ERA5 seasonal timeseries - filter by month, then get spatial mean
+        # ERA5 seasonal timeseries
         era_seasonal = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months))
         era_trimmed = trim_to_us(era_seasonal, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
-        era_ts = era_trimmed.mean(dim=['latitude', 'longitude'])
+        
+        era_spatial_dims = [d for d in era_trimmed.dims if d not in ['valid_time', 'time']]
+        era_ts = era_trimmed.mean(dim=era_spatial_dims)
+        
         era_times = pd.to_datetime(era_ts.valid_time.values)
         era_values = era_ts.values
         
-        # CONUS seasonal timeseries - filter by month, then get spatial mean
+        # CONUS seasonal timeseries
         conus_seasonal = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)})
         conus_trimmed = trim_to_us(
             conus_seasonal, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
             lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
         )
-        conus_ts = conus_trimmed.mean(dim=[lat_name, lon_name])
+        
+        # --- FIX STARTS HERE ---
+        # Identify spatial dims (e.g. south_north, west_east)
+        conus_spatial_dims = [d for d in conus_trimmed.dims if d != time_dim]
+        conus_ts = conus_trimmed.mean(dim=conus_spatial_dims)
+        # --- FIX ENDS HERE ---
+
         conus_times = pd.to_datetime(conus_ts[time_dim].values)
         conus_values = conus_ts.values
         
