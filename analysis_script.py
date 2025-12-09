@@ -171,12 +171,12 @@ def load_all_monthly_data(era_ds, conus_ds, era_var, conus_var):
 
 def load_all_seasonal_data(era_ds, conus_ds, era_var, conus_var):
     time_dim = get_time_dimension(conus_ds)
-    seasons = {"winter":[1,2,12],"spring":{3,4,5},"summer":{6,7,8},"autumn":{9,10,11}}
+    seasons = {"winter":[1,2,12],"spring":[3,4,5],"summer":[6,7,8],"autumn":[9,10,11]}
 
     era_seasonal_data = {}
     conus_seasonal_data = {}
 
-    for season, months in seasons:
+    for season, months in seasons.items():
         if era_var not in era_ds:
             raise KeyError(f"Variable {era_var} not found in ERA5 dataset")
         if conus_var not in conus_ds:
@@ -532,7 +532,7 @@ def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
         print(f"  Skipping {era_var}/{conus_var}: {e}")
         return
 
-    global_min, global_max = compute_global_limits(era_seasonal_data, conus_seasonal_data)
+    global_min, global_max = compute_global_limits(era_seasonal_data, conus_seasonal_data,era_var)
     time_dim = get_time_dimension(conus_ds)
 
     # Define season order
@@ -558,79 +558,79 @@ def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
         conus_season_vals.append(conus_vals)
         season_labels.append(season.capitalize())
 
-        # --------------------------
-        # Plot all seasons in one boxplot
-        # --------------------------
-        fig, ax = plt.subplots(figsize=(10, 6))
-        width = 0.35  # width of each box
-        positions_era = [i - width/2 for i in range(1, 5)]
-        positions_conus = [i + width/2 for i in range(1, 5)]
+    # --------------------------
+    # Plot all seasons in one boxplot
+    # --------------------------
+    fig, ax = plt.subplots(figsize=(10, 6))
+    width = 0.35  # width of each box
+    positions_era = [i - width/2 for i in range(1, 5)]
+    positions_conus = [i + width/2 for i in range(1, 5)]
 
-        # ERA boxes
-        b_era = ax.boxplot(era_season_vals, positions=positions_era, widths=width, patch_artist=True,
+    # ERA boxes
+    b_era = ax.boxplot(era_season_vals, positions=positions_era, widths=width, patch_artist=True,
+                    showfliers=True, medianprops=dict(color='black'))
+    for patch in b_era['boxes']:
+        patch.set_facecolor('skyblue')
+
+    # CONUS boxes
+    b_conus = ax.boxplot(conus_season_vals, positions=positions_conus, widths=width, patch_artist=True,
                         showfliers=True, medianprops=dict(color='black'))
-        for patch in b_era['boxes']:
-            patch.set_facecolor('skyblue')
+    for patch in b_conus['boxes']:
+        patch.set_facecolor('salmon')
 
-        # CONUS boxes
-        b_conus = ax.boxplot(conus_season_vals, positions=positions_conus, widths=width, patch_artist=True,
-                            showfliers=True, medianprops=dict(color='black'))
-        for patch in b_conus['boxes']:
-            patch.set_facecolor('salmon')
+    # X-axis labels at the center of each season pair
+    ax.set_xticks(range(1, 5))
+    ax.set_xticklabels([s.capitalize() for s in seasons])
 
-        # X-axis labels at the center of each season pair
-        ax.set_xticks(range(1, 5))
-        ax.set_xticklabels([s.capitalize() for s in seasons])
+    ax.set_ylabel(era_var)
+    ax.set_title(f'Seasonal Box Plot — {era_var}', fontsize=16, fontweight='bold')
+    ax.grid(alpha=0.3)
 
-        ax.set_ylabel(era_var)
-        ax.set_title(f'Seasonal Box Plot — {era_var}', fontsize=16, fontweight='bold')
-        ax.grid(alpha=0.3)
+    # Legend
+    era_patch = mpatches.Patch(facecolor='skyblue', label='ERA')
+    conus_patch = mpatches.Patch(facecolor='salmon', label='CONUS')
+    ax.legend(handles=[era_patch, conus_patch])
 
-        # Legend
-        era_patch = mpatches.Patch(facecolor='skyblue', label='ERA')
-        conus_patch = mpatches.Patch(facecolor='salmon', label='CONUS')
-        ax.legend(handles=[era_patch, conus_patch])
+    plt.tight_layout()
+    output_file = os.path.join(dirs['stats'], f'stats_{era_var}_seasonal_box.png')
+    plt.savefig(output_file, dpi=300)
+    plt.close()
 
-        plt.tight_layout()
-        output_file = os.path.join(dirs['stats'], f'stats_{era_var}_seasonal_box.png')
-        plt.savefig(output_file, dpi=300)
-        plt.close()
+    # --------------------------
+    # ECDF Figure
+    # --------------------------
+    fig_ecdf, axes_ecdf = plt.subplots(2, 2, figsize=(12, 10))
+    axes_ecdf = axes_ecdf.flatten()
 
-        # --------------------------
-        # ECDF Figure
-        # --------------------------
-        fig_ecdf, axes_ecdf = plt.subplots(2, 2, figsize=(12, 10))
-        axes_ecdf = axes_ecdf.flatten()
+    for i, season in enumerate(seasons):
+        plot_ecdf(axes_ecdf[i], era_season_vals[i], conus_season_vals[i],
+                global_min, global_max, title=f'{season.capitalize()} ECDF')
+        if i == 0:  # add legend only once
+            axes_ecdf[i].legend(['ERA', 'CONUS'])
 
-        for i, season in enumerate(seasons):
-            plot_ecdf(axes_ecdf[i], era_season_vals[i], conus_season_vals[i],
-                    global_min, global_max, title=f'{season.capitalize()} ECDF')
-            if i == 0:  # add legend only once
-                axes_ecdf[i].legend(['ERA', 'CONUS'])
+    fig_ecdf.suptitle(f'Seasonal ECDF — {era_var}', fontsize=16, fontweight='bold', y=0.95)
+    plt.tight_layout(rect=[0,0,1,0.95])
+    output_file_ecdf = os.path.join(dirs['stats'], f'seasonal_ecdf_{era_var}.png')
+    plt.savefig(output_file_ecdf, dpi=300)
+    plt.close()
 
-        fig_ecdf.suptitle(f'Seasonal ECDF — {era_var}', fontsize=16, fontweight='bold', y=0.95)
-        plt.tight_layout(rect=[0,0,1,0.95])
-        output_file_ecdf = os.path.join(dirs['stats'], f'seasonal_ecdf_{era_var}.png')
-        plt.savefig(output_file_ecdf, dpi=300)
-        plt.close()
+    # --------------------------
+    # Q-Q Figure (2x2)
+    # --------------------------
+    fig_qq, axes_qq = plt.subplots(2, 2, figsize=(12, 10))
+    axes_qq = axes_qq.flatten()
 
-        # --------------------------
-        # Q-Q Figure (2x2)
-        # --------------------------
-        fig_qq, axes_qq = plt.subplots(2, 2, figsize=(12, 10))
-        axes_qq = axes_qq.flatten()
+    for i, season in enumerate(seasons):
+        plot_qq(axes_qq[i], era_season_vals[i], conus_season_vals[i],
+                'ERA', 'CONUS', global_min, global_max, title=f'{season.capitalize()} Q-Q')
+        if i == 0:  # add legend only once
+            axes_qq[i].legend(['ERA', 'CONUS'])
 
-        for i, season in enumerate(seasons):
-            plot_qq(axes_qq[i], era_season_vals[i], conus_season_vals[i],
-                    'ERA', 'CONUS', global_min, global_max, title=f'{season.capitalize()} Q-Q')
-            if i == 0:  # add legend only once
-                axes_qq[i].legend(['ERA', 'CONUS'])
-
-        fig_qq.suptitle(f'Seasonal Q-Q — {era_var}', fontsize=16, fontweight='bold', y=0.95)
-        plt.tight_layout(rect=[0,0,1,0.95])
-        output_file_qq = os.path.join(dirs['stats'], f'seasonal_qq_{era_var}.png')
-        plt.savefig(output_file_qq, dpi=300)
-        plt.close()
+    fig_qq.suptitle(f'Seasonal Q-Q — {era_var}', fontsize=16, fontweight='bold', y=0.95)
+    plt.tight_layout(rect=[0,0,1,0.95])
+    output_file_qq = os.path.join(dirs['stats'], f'seasonal_qq_{era_var}.png')
+    plt.savefig(output_file_qq, dpi=300)
+    plt.close()
 
 
 def generate_seasonal_maps(era_ds, conus_ds, era_var, conus_var, dirs):
