@@ -898,7 +898,7 @@ def main():
 
     # 4 Seasonal
     for era_var, conus_var in VARIABLE_PAIRS.items():
-        dirs = setup_directories(OUTPUT_DIR, era_var)
+        dirs = setup_directories(OUTPUT_DIR, era_var, separateMode=False)
         generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs)
         generate_seasonal_timeseries(era_ds, conus_ds, era_var, conus_var, dirs)
     
