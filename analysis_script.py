@@ -52,6 +52,39 @@ LON_MIN, LON_MAX = -125, -66
 # Boolean switch (Controls Monthly Stats, Maps, and Time Series separation)
 SEPARATE_IMAGES = True 
 
+def load_all_seasonal_data(era_ds, conus_ds, era_var, conus_var):
+    """Load and prepare seasonal data for all four seasons."""
+    time_dim = get_time_dimension(conus_ds)
+    lat_name, lon_name = get_coordinate_names(conus_ds)
+    
+    seasons = {
+        "Winter": [12, 1, 2],
+        "Spring": [3, 4, 5],
+        "Summer": [6, 7, 8],
+        "Autumn": [9, 10, 11]
+    }
+    
+    era_seasonal_data = {}
+    conus_seasonal_data = {}
+    
+    for season_name, months in seasons.items():
+        # ERA5 seasonal mean
+        era_season = era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month.isin(months)).mean(dim='valid_time')
+        era_season = trim_to_us(era_season, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_seasonal_data[season_name] = era_season
+        
+        # CONUS seasonal mean
+        conus_season = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month.isin(months)}).mean(dim=time_dim)
+        if lat_name in conus_ds and lon_name in conus_ds:
+            conus_season = conus_season.assign_coords({lat_name: conus_ds[lat_name], lon_name: conus_ds[lon_name]})
+        conus_season = trim_to_us(
+            conus_season, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+            lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
+        )
+        conus_seasonal_data[season_name] = conus_season
+    
+    return era_seasonal_data, conus_seasonal_data
+
 def setup_directories(base_output_dir, var_name, separate_mode):
     """Creates directory structure for Monthly data."""
     base_var_dir = os.path.join(base_output_dir, var_name)
