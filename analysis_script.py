@@ -59,8 +59,8 @@ def main():
         dirs = setup_directories(OUTPUT_DIR, era_var, SEPARATE_IMAGES)
         
         # Monthly Stats & Maps (As originally requested)
-        generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var, dirs, SEPARATE_IMAGES)
-        generate_monthly_temperature_maps(era_ds, conus_ds, dirs, SEPARATE_IMAGES)
+        generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var, dirs)
+        generate_monthly_temperature_maps(era_ds, conus_ds, dirs)
         
         # Monthly Timeseries - NEW OVERLAY VERSION
         generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs)
