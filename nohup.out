@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "/gpfsm/dnb33/sduan/era5-conus404-analysis/analysis_script.py", line 4, in <module>
+    from monthly import generate_monthly_statistics_plots,generate_monthly_temperature_maps,generate_monthly_timeseries
+  File "/gpfsm/dnb33/sduan/era5-conus404-analysis/monthly.py", line 2, in <module>
+    from plotting import create_map_axis,add_map_features,plot_box,plot_ecdf,plot_qq
+  File "/gpfsm/dnb33/sduan/era5-conus404-analysis/plotting.py", line 4, in <module>
+    from scipy.stats import ks_2samp, linregress
+  File "/gpfsm/dnb33/sduan/venv/lib/python3.12/site-packages/scipy/stats/__init__.py", line 655, in <module>
+    from ._mgc import multiscale_graphcorr
+  File "/gpfsm/dnb33/sduan/venv/lib/python3.12/site-packages/scipy/stats/_mgc.py", line 7, in <module>
+    from scipy.ndimage import _measurements
+  File "/gpfsm/dnb33/sduan/venv/lib/python3.12/site-packages/scipy/ndimage/__init__.py", line 157, in <module>
+    from ._support_alternative_backends import *
+  File "/gpfsm/dnb33/sduan/venv/lib/python3.12/site-packages/scipy/ndimage/_support_alternative_backends.py", line 7, in <module>
+    from ._ndimage_api import *   # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/gpfsm/dnb33/sduan/venv/lib/python3.12/site-packages/scipy/ndimage/_ndimage_api.py", line 12, in <module>
+    from ._measurements import *   # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 991, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1087, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1187, in get_data
+KeyboardInterrupt
