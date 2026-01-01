@@ -1,7 +1,7 @@
 #!/usr/local/other/GEOSpyD/24.3.0-0/2024-08-29/envs/py3.12/bin/python3
 
 from setup import load_datasets, setup_directories
-from monthly import generate_monthly_statistics_plots,generate_monthly_temperature_maps,generate_monthly_timeseries
+from monthly import generate_monthly_statistics_plots,generate_monthly_maps,generate_monthly_timeseries
 from seasonal import generate_seasonal_maps,generate_seasonal_statistics,generate_seasonal_timeseries
 from yearly import generate_yearly_single_variable, setup_yearly_directories
 
@@ -60,7 +60,7 @@ def main():
         
         # Monthly Stats & Maps (As originally requested)
         generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var, dirs)
-        generate_monthly_temperature_maps(era_ds, conus_ds, dirs)
+        generate_monthly_maps(era_ds, conus_ds, era_var, conus_var, dirs)
         
         # Monthly Timeseries - NEW OVERLAY VERSION
         generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs)

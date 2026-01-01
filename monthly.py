@@ -58,7 +58,7 @@ def load_all_monthly_data(era_ds, conus_ds, era_var, conus_var):
     return era_monthly_data, conus_monthly_data
 
 
-def generate_monthly_temperature_maps(era_ds, conus_ds, era_var, conus_var, dirs):
+def generate_monthly_maps(era_ds, conus_ds, era_var, conus_var, dirs):
     print(f"Processing monthly maps: {era_var} vs {conus_var}...")
     if era_var not in era_ds or conus_var not in conus_ds: return
     time_dim, (lat_name, lon_name) = get_time_dimension(conus_ds), get_coordinate_names(conus_ds)
