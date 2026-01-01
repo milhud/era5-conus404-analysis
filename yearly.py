@@ -4,6 +4,7 @@ from plotting import create_map_axis,add_map_features,plot_box,plot_ecdf,plot_qq
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
+import cartopy.crs as ccrs
 import pandas as pd
 import os
 from pathlib import Path
@@ -119,8 +120,7 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     if era_values.ndim > 1: era_values = era_values.squeeze()
 
     # --- 2. CONUS Data ---
-    conus_month = conus_ds[conus_var].sel({conus_time_dim: conus_ds[conus_time_dim].dt.month == month})
-    conus_trimmed = trim_to_us(conus_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+    conus_trimmed = trim_to_us(conus_ds[conus_var], LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
                                 lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
     
     # Collapse all non-time dimensions

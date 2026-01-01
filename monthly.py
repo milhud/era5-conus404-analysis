@@ -58,17 +58,17 @@ def load_all_monthly_data(era_ds, conus_ds, era_var, conus_var):
     return era_monthly_data, conus_monthly_data
 
 
-def generate_monthly_temperature_maps(era_ds, conus_ds, dirs):
-    print("Processing monthly temperature maps...")
-    if 't2m' not in era_ds or 'T2' not in conus_ds: return
+def generate_monthly_temperature_maps(era_ds, conus_ds, era_var, conus_var, dirs):
+    print(f"Processing monthly maps: {era_var} vs {conus_var}...")
+    if era_var not in era_ds or conus_var not in conus_ds: return
     time_dim, (lat_name, lon_name) = get_time_dimension(conus_ds), get_coordinate_names(conus_ds)
-    unit = VARIABLE_UNITS.get('t2m', 'K')
+    unit = VARIABLE_UNITS.get(era_var)
     
     all_temps = []
     for month in range(1, 13):
-        era_dims = [d for d in era_ds['t2m'].dims if d in ['valid_time', 'time']]
-        era_month = trim_to_us(era_ds['t2m'].sel(valid_time=era_ds.valid_time.dt.month == month).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
-        conus_month = trim_to_us(conus_ds['T2'].sel({time_dim: conus_ds[time_dim].dt.month == month}).mean(dim=time_dim), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
+        era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
+        era_month = trim_to_us(era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        conus_month = trim_to_us(conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month}).mean(dim=time_dim), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
         all_temps.extend([float(era_month.min()), float(era_month.max()), float(conus_month.min()), float(conus_month.max())])
     vmin, vmax = min(all_temps), max(all_temps)
 
@@ -76,9 +76,9 @@ def generate_monthly_temperature_maps(era_ds, conus_ds, dirs):
         month_num = month_idx + 1
         month_name = calendar.month_name[month_num]
         
-        era_dims = [d for d in era_ds['t2m'].dims if d in ['valid_time', 'time']]
-        era_m = trim_to_us(era_ds['t2m'].sel(valid_time=era_ds.valid_time.dt.month == month_num).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
-        conus_m = conus_ds['T2'].sel({time_dim: conus_ds[time_dim].dt.month == month_num}).mean(dim=time_dim)
+        era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
+        era_m = trim_to_us(era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month_num).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        conus_m = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month_num}).mean(dim=time_dim)
         if lat_name in conus_ds and lon_name in conus_ds: conus_m = conus_m.assign_coords({lat_name: conus_ds[lat_name], lon_name: conus_ds[lon_name]})
         conus_m = trim_to_us(conus_m, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
         
@@ -96,9 +96,9 @@ def generate_monthly_temperature_maps(era_ds, conus_ds, dirs):
         ax2.set_title('CONUS404', fontsize=12)
         
         cbar = fig.colorbar(p2, cax=fig.add_subplot(gs[2]), extend='both')
-        cbar.set_label(f'Temperature ({unit})', fontsize=10)
-        plt.suptitle(f'{month_name} Temperature Comparison', fontsize=16, fontweight='bold', y=0.95)
-        plt.savefig(os.path.join(dirs['maps'], f'map_t2m_month{month_num:02d}.png'), dpi=300, bbox_inches='tight')
+        cbar.set_label(f'{era_var} ({unit})', fontsize=10)
+        plt.suptitle(f'{month_name} {era_var} Comparison', fontsize=16, fontweight='bold', y=0.95)
+        plt.savefig(os.path.join(dirs['maps'], f'map_{era_var}_month{month_num:02d}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
 def generate_monthly_statistics_plots(era_ds, conus_ds, era_var, conus_var, dirs):
