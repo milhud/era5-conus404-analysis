@@ -134,7 +134,7 @@ def generate_seasonal_maps(era_ds, conus_ds, era_var, conus_var, dirs):
     for month in range(1, 13):
         era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
         era_month = trim_to_us(era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
-        conus_month = trim_to_us(conus_ds[era_var].sel({time_dim: conus_ds[time_dim].dt.month == month}).mean(dim=time_dim), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
+        conus_month = trim_to_us(conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month}).mean(dim=time_dim), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
         all_temps.extend([float(era_month.min()), float(era_month.max()), float(conus_month.min()), float(conus_month.max())])
     vmin, vmax = min(all_temps), max(all_temps)
 
