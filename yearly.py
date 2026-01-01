@@ -88,3 +88,55 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     cbar.set_label(unit)
     plt.savefig(os.path.join(var_dir, f'yearly_map_{era_var}.png'), dpi=300)
     plt.close()
+
+    # 3. Yearly Timeseries
+    print(f"Generating single-year annual mean plot for {era_var}...")
+    
+    era_time_dim = 'valid_time' if 'valid_time' in era_ds else 'time'
+    era_trimmed_ts = trim_to_us(
+        era_ds[era_var], LAT_MIN, LAT_MAX, LON_MIN, LON_MAX
+    )
+    era_reduce_dims = [d for d in era_trimmed_ts.dims if d != era_time_dim]
+    era_annual_value = (
+        era_trimmed_ts
+        .mean(dim=[era_time_dim] + era_reduce_dims, skipna=True)
+        .values
+        .item()
+    )
+
+    conus_time_dim = get_time_dimension(conus_ds)
+    conus_trimmed_ts = trim_to_us(
+        conus_ds[conus_var],
+        LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+        lat_grid=conus_ds[lat_name],
+        lon_grid=conus_ds[lon_name]
+    )
+    conus_reduce_dims = [d for d in conus_trimmed_ts.dims if d != conus_time_dim]
+    conus_annual_value = (
+        conus_trimmed_ts
+        .mean(dim=[conus_time_dim] + conus_reduce_dims, skipna=True)
+        .values
+        .item()
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(
+        ['ERA5', 'CONUS404'],
+        [era_annual_value, conus_annual_value],
+        marker='o', linestyle='-',
+        linewidth=2, markersize=8,
+        color='#444444'
+    )
+    ax.set_ylabel(f'{era_var} ({unit})', fontsize=12, fontweight='bold')
+    ax.set_title(
+        f'Annual Mean Comparison (Single Year): {era_var}',
+        fontsize=14, fontweight='bold'
+    )
+    ax.grid(True, axis='y', alpha=0.3, linestyle='--')
+    ax.set_facecolor('#f8f9fa')
+    plt.tight_layout()
+    plt.savefig(
+        os.path.join(var_dir, f'yearly_timeseries_{era_var}.png'),
+        dpi=300, bbox_inches='tight'
+    )
+    plt.close()
