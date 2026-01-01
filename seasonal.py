@@ -201,7 +201,7 @@ def generate_seasonal_statistics(era_ds, conus_ds, era_var, conus_var, dirs):
         print(f"  Skipping {era_var}/{conus_var}: {e}")
         return
 
-    global_min, global_max = compute_global_limits(era_seasonal_data, conus_seasonal_data)
+    global_min, global_max = compute_global_limits(era_seasonal_data, conus_seasonal_data, era_var)
     time_dim = get_time_dimension(conus_ds)
 
     seasons = ["winter", "spring", "summer", "autumn"]
