@@ -3,7 +3,8 @@ from plotting import create_map_axis,add_map_features,plot_box,plot_ecdf,plot_qq
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import cartopy.crs as ccrs
+import matplotlib.dates as mdates
+import pandas as pd
 import os
 from pathlib import Path
 
@@ -90,53 +91,64 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     plt.close()
 
     # 3. Yearly Timeseries
-    print(f"Generating single-year annual mean plot for {era_var}...")
+    if 'valid_time' in era_ds:
+        era_time_dim = 'valid_time'
+    elif 'time' in era_ds:
+        era_time_dim = 'time'
+    else:
+        era_time_dim = list(era_ds.dims)[0] # Fallback
+        
+    if 'Time' in conus_ds:
+        conus_time_dim = 'Time'
+    elif 'time' in conus_ds:
+        conus_time_dim = 'time'
+    else:
+        conus_time_dim = list(conus_ds.dims)[0]
+
+    lat_name, lon_name = get_coordinate_names(conus_ds)
+    unit = VARIABLE_UNITS.get(era_var, '')
+
+    era_trimmed = trim_to_us(era_ds[era_var], LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        
+    # Collapse all non-time dimensions
+    era_reduce_dims = [d for d in era_trimmed.dims if d != era_time_dim]
+    era_ts = era_trimmed.mean(dim=era_reduce_dims)
     
-    era_time_dim = 'valid_time' if 'valid_time' in era_ds else 'time'
-    era_trimmed_ts = trim_to_us(
-        era_ds[era_var], LAT_MIN, LAT_MAX, LON_MIN, LON_MAX
-    )
-    era_reduce_dims = [d for d in era_trimmed_ts.dims if d != era_time_dim]
-    era_annual_value = (
-        era_trimmed_ts
-        .mean(dim=[era_time_dim] + era_reduce_dims, skipna=True)
-        .values
-        .item()
-    )
+    era_times = pd.to_datetime(era_ts[era_time_dim].values)
+    era_values = era_ts.values
+    if era_values.ndim > 1: era_values = era_values.squeeze()
 
-    conus_time_dim = get_time_dimension(conus_ds)
-    conus_trimmed_ts = trim_to_us(
-        conus_ds[conus_var],
-        LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
-        lat_grid=conus_ds[lat_name],
-        lon_grid=conus_ds[lon_name]
-    )
-    conus_reduce_dims = [d for d in conus_trimmed_ts.dims if d != conus_time_dim]
-    conus_annual_value = (
-        conus_trimmed_ts
-        .mean(dim=[conus_time_dim] + conus_reduce_dims, skipna=True)
-        .values
-        .item()
-    )
+    # --- 2. CONUS Data ---
+    conus_month = conus_ds[conus_var].sel({conus_time_dim: conus_ds[conus_time_dim].dt.month == month})
+    conus_trimmed = trim_to_us(conus_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
+                                lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
+    
+    # Collapse all non-time dimensions
+    conus_reduce_dims = [d for d in conus_trimmed.dims if d != conus_time_dim]
+    conus_ts = conus_trimmed.mean(dim=conus_reduce_dims)
+    
+    conus_times = pd.to_datetime(conus_ts[conus_time_dim].values)
+    conus_values = conus_ts.values
+    if conus_values.ndim > 1: conus_values = conus_values.squeeze()
 
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(
-        ['ERA5', 'CONUS404'],
-        [era_annual_value, conus_annual_value],
-        marker='o', linestyle='-',
-        linewidth=2, markersize=8,
-        color='#444444'
-    )
-    ax.set_ylabel(f'{era_var} ({unit})', fontsize=12, fontweight='bold')
-    ax.set_title(
-        f'Annual Mean Comparison (Single Year): {era_var}',
-        fontsize=14, fontweight='bold'
-    )
-    ax.grid(True, axis='y', alpha=0.3, linestyle='--')
-    ax.set_facecolor('#f8f9fa')
+    # --- 3. Plotting ---
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    ax.plot(era_times, era_values, '-', linewidth=2, label='ERA5', color='royalblue', alpha=0.8)
+    ax.plot(conus_times, conus_values, '--', linewidth=2, label='CONUS404', color='crimson', alpha=0.8)
+    
+    ax.set_title(f'Yearly Timeseries Comparison: {era_var} vs {conus_var}', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Date', fontsize=12)
+    ax.set_ylabel(f'{era_var} ({unit})', fontsize=12)
+    ax.legend(loc='upper right', fontsize=12, frameon=True, shadow=True)
+    ax.grid(True, linestyle=':', alpha=0.6)
+    
+    ax.xaxis.set_major_locator(mdates.MonthLocator())      # major ticks: first day of each month
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))  # show month name (Jan, Feb, ...)
+    ax.xaxis.set_minor_locator(mdates.DayLocator(interval=1)) # minor ticks: every day
+    ax.tick_params(axis='x', rotation=45) 
+
     plt.tight_layout()
-    plt.savefig(
-        os.path.join(var_dir, f'yearly_timeseries_{era_var}.png'),
-        dpi=300, bbox_inches='tight'
-    )
+    output_file = os.path.join(var_dir, f'yearly_timeseries_{era_var}.png')
+    plt.savefig(output_file, dpi=300)
     plt.close()
