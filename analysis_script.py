@@ -49,7 +49,7 @@ VARIABLE_PAIRS = {
 VARIABLE_UNITS = {
     't2m': 'K',
     'd2m': 'K',
-    'sp': 'Pa',
+    'sp': 'hPa',
     'u10': 'm/s',
     'v10': 'm/s',
     'lai': 'Index',
@@ -129,6 +129,16 @@ def get_clean_values(data):
     vals = data.values.flatten()
     return vals[np.isfinite(vals)]
 
+def convert_units(data, var_name):
+    # convert era5 tp from meters to millimeters
+    if var_name == 'tp':
+        return data * 1000.0
+    # convert surface pressure from pascals to hectopascals
+    elif var_name == 'sp':
+        return data / 100.0
+    else:
+        return data
+
 def create_map_projection():
     return ccrs.LambertConformal(
         central_longitude=-96.0,
@@ -162,6 +172,7 @@ def load_seasonal_data(era_ds, conus_ds, era_var, conus_var):
         era_time_dims = [d for d in era_season.dims if d in ['valid_time', 'time']]
         era_season_mean = era_season.mean(dim=era_time_dims)
         era_season_mean = trim_to_us(era_season_mean, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_season_mean = convert_units(era_season_mean, era_var)
         era_seasonal_data[season_name] = era_season_mean
         
         # conus seasonal mean
@@ -181,6 +192,9 @@ def load_seasonal_data(era_ds, conus_ds, era_var, conus_var):
             conus_season_mean, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
             lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
         )
+        # convert conus pressure from pa to hpa if sp variable
+        if era_var == 'sp':
+            conus_season_mean = conus_season_mean / 100.0
         conus_seasonal_data[season_name] = conus_season_mean
     
     return era_seasonal_data, conus_seasonal_data
@@ -193,6 +207,7 @@ def compute_yearly_mean(era_ds, conus_ds, era_var, conus_var):
     era_time_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
     era_yearly = era_ds[era_var].mean(dim=era_time_dims)
     era_yearly = trim_to_us(era_yearly, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+    era_yearly = convert_units(era_yearly, era_var)
     
     # conus
     conus_time_dim = get_time_dimension(conus_ds)
@@ -209,6 +224,9 @@ def compute_yearly_mean(era_ds, conus_ds, era_var, conus_var):
         conus_yearly, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
         lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
     )
+    # convert conus pressure from pa to hpa if sp variable
+    if era_var == 'sp':
+        conus_yearly = conus_yearly / 100.0
     
     return era_yearly, conus_yearly
 
@@ -353,6 +371,9 @@ def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path):
     if 'time' in era_ts.dims and era_time_dim == 'valid_time':
         era_ts = era_ts.mean(dim='time')
     
+    # apply unit conversion
+    era_ts = convert_units(era_ts, era_var)
+    
     era_times = pd.to_datetime(era_ts[era_time_dim].values)
     era_values = era_ts.values
     if era_values.ndim > 1:
@@ -363,6 +384,10 @@ def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path):
     conus_data = conus_ds[conus_var]
     conus_spatial_dims = [d for d in conus_data.dims if d != conus_time_dim]
     conus_ts = conus_data.mean(dim=conus_spatial_dims, skipna=True)
+    
+    # convert conus pressure from pa to hpa if sp variable
+    if era_var == 'sp':
+        conus_ts = conus_ts / 100.0
     
     conus_times = pd.to_datetime(conus_ts[conus_time_dim].values)
     conus_values = conus_ts.values
@@ -403,13 +428,11 @@ def plot_side_by_side_heatmaps(era_yearly, conus_yearly, era_var, conus_var,
     vmin = min(era_vals.min(), conus_vals.min())
     vmax = max(era_vals.max(), conus_vals.max())
     
-    fig = plt.figure(figsize=(16, 7))
-    gs = gridspec.GridSpec(1, 4, width_ratios=[0.05, 1, 1, 0.05], 
+    fig = plt.figure(figsize=(14, 7))
+    gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], 
                           wspace=0.05, hspace=0)
     
-    cax_left = fig.add_subplot(gs[0])
-    
-    ax1 = fig.add_subplot(gs[1], projection=create_map_projection())
+    ax1 = fig.add_subplot(gs[0], projection=create_map_projection())
     im1 = ax1.pcolormesh(
         era_yearly['longitude'], era_yearly['latitude'], era_yearly,
         transform=ccrs.PlateCarree(), cmap='RdYlBu_r', 
@@ -418,7 +441,7 @@ def plot_side_by_side_heatmaps(era_yearly, conus_yearly, era_var, conus_var,
     add_map_features(ax1, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX)
     ax1.set_title('ERA5', fontsize=14, fontweight='bold', pad=10)
     
-    ax2 = fig.add_subplot(gs[2], projection=create_map_projection())
+    ax2 = fig.add_subplot(gs[1], projection=create_map_projection())
     im2 = ax2.pcolormesh(
         conus_yearly[lon_name], conus_yearly[lat_name], conus_yearly,
         transform=ccrs.PlateCarree(), cmap='RdYlBu_r', 
@@ -427,11 +450,7 @@ def plot_side_by_side_heatmaps(era_yearly, conus_yearly, era_var, conus_var,
     add_map_features(ax2, LON_MIN, LON_MAX, LAT_MIN, LAT_MAX)
     ax2.set_title('CONUS404', fontsize=14, fontweight='bold', pad=10)
     
-    cax_right = fig.add_subplot(gs[3])
-    
-    cbar_left = fig.colorbar(im1, cax=cax_left, extend='both')
-    cbar_left.set_label(f'{VARIABLE_UNITS.get(era_var, "")}', 
-                        fontsize=12, fontweight='bold')
+    cax_right = fig.add_subplot(gs[2])
     
     cbar_right = fig.colorbar(im2, cax=cax_right, extend='both')
     cbar_right.set_label(f'{VARIABLE_UNITS.get(era_var, "")}', 
