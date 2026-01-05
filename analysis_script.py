@@ -19,11 +19,11 @@ OUTPUT_DIR = 'comparison_plots'
 
 # ERA5 (key) : CONUS404 (value)
 VARIABLE_PAIRS = {
-    't2m': 'T2',
-    'd2m': 'TD2',
-    'sp': 'PSFC',
-    'u10': 'U10',
-    'v10': 'V10',
+   # 't2m': 'T2',
+   # 'd2m': 'TD2',
+   # 'sp': 'PSFC',
+   # 'u10': 'U10',
+   # 'v10': 'V10',
     'lai': 'LAI',
     'tp': 'ACRAINLSM',
 }

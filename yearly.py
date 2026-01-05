@@ -145,7 +145,7 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     
     ax.xaxis.set_major_locator(mdates.MonthLocator())      # major ticks: first day of each month
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))  # show month name (Jan, Feb, ...)
-    ax.xaxis.set_minor_locator(mdates.DayLocator(interval=1)) # minor ticks: every day
+    #ax.xaxis.set_minor_locator(mdates.DayLocator(interval=1)) # minor ticks: every day
     ax.tick_params(axis='x', rotation=45) 
 
     plt.tight_layout()

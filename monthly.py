@@ -215,7 +215,7 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
         ax.grid(True, linestyle=':', alpha=0.6)
         
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%d'))
-        ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
+        #ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
         ax.set_xlabel(f'Day of {month_name}')
 
         plt.tight_layout()
