@@ -25,7 +25,7 @@ VARIABLE_PAIRS = {
    # 'u10': 'U10',
    # 'v10': 'V10',
     'lai': 'LAI',
-    'tp': 'ACRAINLSM',
+   # 'tp': 'ACRAINLSM',
 }
 
 # Units for labeling
