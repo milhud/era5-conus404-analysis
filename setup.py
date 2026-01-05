@@ -42,6 +42,16 @@ def trim_to_us(data, lat_min, lat_max, lon_min, lon_max, lat_grid=None, lon_grid
         )
     return data
 
+def convert_units(data, var_name):
+    # convert era5 tp from meters to millimeters
+    if var_name == 'tp':
+        return data * 1000.0
+    # convert surface pressure from pascals to hectopascals
+    elif var_name == 'sp':
+        return data / 100.0
+    else:
+        return data
+
 def setup_directories(base_output_dir, var_name, separate_mode):
     base_var_dir = os.path.join(base_output_dir, var_name)
     Path(base_var_dir).mkdir(parents=True, exist_ok=True)

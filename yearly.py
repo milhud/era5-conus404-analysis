@@ -1,4 +1,4 @@
-from setup import get_time_dimension,get_coordinate_names,trim_to_us,get_clean_values,compute_global_limits
+from setup import get_time_dimension,get_coordinate_names,trim_to_us,get_clean_values,compute_global_limits, convert_units
 from plotting import create_map_axis,add_map_features,plot_box,plot_ecdf,plot_qq
 
 import matplotlib.pyplot as plt
@@ -71,6 +71,7 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
 
     # 2. Yearly Maps
     era_map = trim_to_us(era_agg, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+    era_map = convert_units(era_map,era_var)
     conus_map = trim_to_us(conus_agg, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
     
     fig = plt.figure(figsize=(15, 6))
@@ -110,6 +111,7 @@ def generate_yearly_single_variable(era_ds, conus_ds, era_var, conus_var, yearly
     unit = VARIABLE_UNITS.get(era_var, '')
 
     era_trimmed = trim_to_us(era_ds[era_var], LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+    era_trimmed = convert_units(era_trimmed,era_var)
         
     # Collapse all non-time dimensions
     era_reduce_dims = [d for d in era_trimmed.dims if d != era_time_dim]

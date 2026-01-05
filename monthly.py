@@ -1,4 +1,4 @@
-from setup import get_time_dimension,get_coordinate_names,trim_to_us,get_clean_values,compute_global_limits
+from setup import get_time_dimension,get_coordinate_names,trim_to_us,get_clean_values,compute_global_limits, convert_units
 from plotting import create_map_axis,add_map_features,plot_box,plot_ecdf,plot_qq
 
 import matplotlib.pyplot as plt
@@ -68,6 +68,7 @@ def generate_monthly_maps(era_ds, conus_ds, era_var, conus_var, dirs):
     for month in range(1, 13):
         era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
         era_month = trim_to_us(era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_month = convert_units(era_month,era_var)
         conus_month = trim_to_us(conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month}).mean(dim=time_dim), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
         all_temps.extend([float(era_month.min()), float(era_month.max()), float(conus_month.min()), float(conus_month.max())])
     vmin, vmax = min(all_temps), max(all_temps)
@@ -78,6 +79,7 @@ def generate_monthly_maps(era_ds, conus_ds, era_var, conus_var, dirs):
         
         era_dims = [d for d in era_ds[era_var].dims if d in ['valid_time', 'time']]
         era_m = trim_to_us(era_ds[era_var].sel(valid_time=era_ds.valid_time.dt.month == month_num).mean(dim=era_dims), LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_m = convert_units(era_m,era_var)
         conus_m = conus_ds[conus_var].sel({time_dim: conus_ds[time_dim].dt.month == month_num}).mean(dim=time_dim)
         if lat_name in conus_ds and lon_name in conus_ds: conus_m = conus_m.assign_coords({lat_name: conus_ds[lat_name], lon_name: conus_ds[lon_name]})
         conus_m = trim_to_us(conus_m, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name])
@@ -180,6 +182,7 @@ def generate_monthly_timeseries(era_ds, conus_ds, era_var, conus_var, dirs):
             continue
 
         era_trimmed = trim_to_us(era_month, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
+        era_trimmed = convert_units(era_trimmed,era_var)
         
         # Collapse all non-time dimensions
         era_reduce_dims = [d for d in era_trimmed.dims if d != era_time_dim]
