@@ -13,7 +13,7 @@ import os
 warnings.filterwarnings("ignore")
 
 # Configuration
-ERA5_FILE = 'era5_2015.nc'
+ERA5_FILE = 'era5_2010.nc'
 CONUS_FILE = 'conus404_yearly_2010.nc'
 OUTPUT_DIR = 'comparison_plots'
 
