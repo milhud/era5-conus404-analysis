@@ -192,7 +192,7 @@ def load_seasonal_data(era_ds, conus_ds, era_var, conus_var):
             conus_season_mean, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
             lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
         )
-        # convert conus pressure from pa to hpa if sp variable
+        # convert conus pressure from pa to hpa
         if era_var == 'sp':
             conus_season_mean = conus_season_mean / 100.0
         conus_seasonal_data[season_name] = conus_season_mean
@@ -224,7 +224,7 @@ def compute_yearly_mean(era_ds, conus_ds, era_var, conus_var):
         conus_yearly, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX,
         lat_grid=conus_ds[lat_name], lon_grid=conus_ds[lon_name]
     )
-    # convert conus pressure from pa to hpa if sp variable
+    # convert conus pressure from pa to hpa
     if era_var == 'sp':
         conus_yearly = conus_yearly / 100.0
     
@@ -344,13 +344,20 @@ def plot_qq_plot(era_seasonal_data, conus_seasonal_data, era_var, output_path):
     ]
     ax.plot(lims, lims, 'k--', alpha=0.5, linewidth=1.5, label='1:1 Line')
     
+    # set axis limits to data range with small padding
+    x_range = era_q.max() - era_q.min()
+    y_range = conus_q.max() - conus_q.min()
+    x_pad = x_range * 0.05
+    y_pad = y_range * 0.05
+    ax.set_xlim(era_q.min() - x_pad, era_q.max() + x_pad)
+    ax.set_ylim(conus_q.min() - y_pad, conus_q.max() + y_pad)
+    
     ax.set_xlabel(f'ERA5 Quantiles ({VARIABLE_UNITS.get(era_var, "")})', 
                   fontsize=12, fontweight='bold')
     ax.set_ylabel(f'CONUS404 Quantiles ({VARIABLE_UNITS.get(era_var, "")})', 
                   fontsize=12, fontweight='bold')
     ax.set_title(f'Q-Q Plot: {VARIABLE_NAMES.get(era_var, era_var)}', 
                  fontsize=15, fontweight='bold', pad=15)
-    ax.set_aspect('equal', adjustable='box')
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.legend(fontsize=11, loc='upper left', framealpha=0.9)
     
@@ -385,7 +392,7 @@ def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path):
     conus_spatial_dims = [d for d in conus_data.dims if d != conus_time_dim]
     conus_ts = conus_data.mean(dim=conus_spatial_dims, skipna=True)
     
-    # convert conus pressure from pa to hpa if sp variable
+    # convert conus pressure from pa to hpa
     if era_var == 'sp':
         conus_ts = conus_ts / 100.0
     
