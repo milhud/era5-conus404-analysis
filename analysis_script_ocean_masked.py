@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # configuration
-BASE_OUTPUT_DIR = 'comparison_plots_ocean_masked'
+BASE_OUTPUT_DIR = 'plots'
 CONUS_BASE = "../../final_data/conus404_yearly_{year}.nc"
 ERA5_BASE = "../../../sduan/pipeline/data/processed/era5_{year}.nc"
 YEARS = range(1980, 2021)
