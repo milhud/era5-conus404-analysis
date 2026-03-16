@@ -117,8 +117,8 @@ vmin = min(np.nanmin(era_arr), np.nanmin(conus_arr))
 vmax = max(np.nanmax(era_arr), np.nanmax(conus_arr))
 
 # ── plot ─────────────────────────────────────────────────────────────────────
-fig = plt.figure(figsize=(16, 7))
-gs  = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 0.04, 0.05], wspace=0.08)
+fig = plt.figure(figsize=(17, 7))
+gs  = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 0.18, 0.05], wspace=0.08)
 
 ax1 = fig.add_subplot(gs[0], projection=proj)
 im1 = ax1.pcolormesh(lon_e, lat_e, era_arr, transform=ccrs.PlateCarree(),
