@@ -119,7 +119,7 @@ vmax = max(np.nanmax(era_arr), np.nanmax(conus_arr))
 # ── plot ─────────────────────────────────────────────────────────────────────
 fig = plt.figure(figsize=(16, 7))
 # two equal map panels, leave the right 15% of the figure for lat labels + colorbar
-gs = gridspec.GridSpec(1, 2, left=0.04, right=0.78, wspace=0.08)
+gs = gridspec.GridSpec(1, 2, left=0.04, right=0.84, wspace=0.08)
 
 ax1 = fig.add_subplot(gs[0], projection=proj)
 im1 = ax1.pcolormesh(lon_e, lat_e, era_arr, transform=ccrs.PlateCarree(),
@@ -134,7 +134,7 @@ add_map_features(ax2, lat_side='right')
 ax2.set_title('CONUS404', fontsize=14, fontweight='bold', pad=10)
 
 # colorbar placed explicitly well to the right of the lat labels
-cax = fig.add_axes([0.91, 0.15, 0.018, 0.68])
+cax = fig.add_axes([0.93, 0.15, 0.018, 0.68])
 fig.colorbar(im2, cax=cax, extend='both').set_label('K', fontsize=12, fontweight='bold')
 
 fig.suptitle(f'Yearly Mean 2m Temperature ({YEAR}) — Ocean Masked',
