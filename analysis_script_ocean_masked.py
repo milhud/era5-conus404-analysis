@@ -252,6 +252,17 @@ def compute_yearly_mean(era_ds, conus_ds, era_var, conus_var):
     if era_var == 'sp':
         conus_yearly = conus_yearly / 100.0
 
+    # ensure CONUS404 is masked to the same bounding box as ERA5 so both
+    # panels cover identical geographic area in the heatmap
+    lat_grid = conus_ds[lat_name].values
+    lon_grid = conus_ds[lon_name].values
+    if lat_grid.ndim == 3:
+        lat_grid = lat_grid[0]
+        lon_grid = lon_grid[0]
+    bounds_mask = ((lat_grid >= LAT_MIN) & (lat_grid <= LAT_MAX) &
+                   (lon_grid >= LON_MIN) & (lon_grid <= LON_MAX))
+    conus_yearly = conus_yearly.where(bounds_mask)
+
     return era_yearly, conus_yearly
 
 def compute_global_limits(era_seasonal_data, conus_seasonal_data):
