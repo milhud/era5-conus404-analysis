@@ -33,17 +33,11 @@ logger = logging.getLogger(__name__)
 BASE_OUTPUT_DIR = 'plots'
 CONUS_BASE = "../../final_data/conus404_yearly_{year}.nc"
 ERA5_BASE = "../../../sduan/pipeline/data/processed/era5_{year}.nc"
-YEARS = range(1980, 2021)
+YEARS = [2015]
 
 # variable pairs: era5 (key) : conus404 (value)
 VARIABLE_PAIRS = {
     't2m': 'T2',
-    'd2m': 'TD2',
-    'sp': 'PSFC',
-    'u10': 'U10',
-    'v10': 'V10',
-    'lai': 'LAI',
-    'tp': 'PREC_ACC_NC',
 }
 
 # units for labeling
@@ -344,7 +338,7 @@ def compute_global_limits(era_seasonal_data, conus_seasonal_data):
 # plotting functions
 
 def plot_seasonal_boxplots(era_seasonal_data, conus_seasonal_data,
-                          era_var, output_path):
+                          era_var, output_path, year=None):
     logger.info(f"  generating seasonal box plots...")
 
     season_names = list(SEASONS.keys())
@@ -395,7 +389,8 @@ def plot_seasonal_boxplots(era_seasonal_data, conus_seasonal_data,
     ax.set_xticklabels(season_names, fontsize=12)
     ax.set_ylabel(f'{VARIABLE_NAMES.get(era_var, era_var)} ({VARIABLE_UNITS.get(era_var, "")})',
                   fontsize=13, fontweight='bold')
-    ax.set_title(f'Seasonal Comparison: {VARIABLE_NAMES.get(era_var, era_var)}',
+    year_str = f' ({year})' if year is not None else ''
+    ax.set_title(f'Seasonal Comparison: {VARIABLE_NAMES.get(era_var, era_var)}{year_str}',
                  fontsize=15, fontweight='bold', pad=15)
 
     ax.set_ylim(global_min - y_pad, global_max + y_pad)
@@ -410,7 +405,7 @@ def plot_seasonal_boxplots(era_seasonal_data, conus_seasonal_data,
     plt.close()
     logger.info(f"    saved: {output_path}")
 
-def plot_qq_plot(era_seasonal_data, conus_seasonal_data, era_var, output_path):
+def plot_qq_plot(era_seasonal_data, conus_seasonal_data, era_var, output_path, year=None):
     logger.info(f"  generating q-q plot...")
 
     era_all = []
@@ -456,7 +451,8 @@ def plot_qq_plot(era_seasonal_data, conus_seasonal_data, era_var, output_path):
                   fontsize=12, fontweight='bold')
     ax.set_ylabel(f'CONUS404 Quantiles ({VARIABLE_UNITS.get(era_var, "")})',
                   fontsize=12, fontweight='bold')
-    ax.set_title(f'Q-Q Plot: {VARIABLE_NAMES.get(era_var, era_var)}',
+    year_str = f' ({year})' if year is not None else ''
+    ax.set_title(f'Q-Q Plot: {VARIABLE_NAMES.get(era_var, era_var)}{year_str}',
                  fontsize=15, fontweight='bold', pad=15)
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.legend(fontsize=11, loc='upper left', framealpha=0.9)
@@ -466,7 +462,7 @@ def plot_qq_plot(era_seasonal_data, conus_seasonal_data, era_var, output_path):
     plt.close()
     logger.info(f"    saved: {output_path}")
 
-def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path):
+def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path, year=None):
     logger.info(f"  generating yearly timeseries...")
 
     era_time_dim = 'valid_time' if 'valid_time' in era_ds else 'time'
@@ -511,7 +507,8 @@ def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path):
     ax.set_xlabel('Date', fontsize=12, fontweight='bold')
     ax.set_ylabel(f'{VARIABLE_NAMES.get(era_var, era_var)} ({VARIABLE_UNITS.get(era_var, "")})',
                   fontsize=12, fontweight='bold')
-    ax.set_title(f'Yearly Time Series (Spatial Mean): {VARIABLE_NAMES.get(era_var, era_var)}',
+    year_str = f' ({year})' if year is not None else ''
+    ax.set_title(f'Yearly Time Series (Spatial Mean): {VARIABLE_NAMES.get(era_var, era_var)}{year_str}',
                  fontsize=15, fontweight='bold', pad=15)
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.legend(loc='best', fontsize=12, framealpha=0.9)
@@ -525,7 +522,7 @@ def plot_yearly_timeseries(era_ds, conus_ds, era_var, conus_var, output_path):
     logger.info(f"    saved: {output_path}")
 
 def plot_side_by_side_heatmaps(era_yearly, conus_yearly, era_var, conus_var,
-                               era_ds, conus_ds, output_path):
+                               era_ds, conus_ds, output_path, year=None):
     logger.info(f"  generating side-by-side heatmaps...")
 
     lat_name, lon_name = get_coordinate_names(conus_ds)
@@ -581,7 +578,8 @@ def plot_side_by_side_heatmaps(era_yearly, conus_yearly, era_var, conus_var,
     cbar_right.set_label(f'{VARIABLE_UNITS.get(era_var, "")}',
                          fontsize=12, fontweight='bold')
 
-    fig.suptitle(f'Yearly Mean Comparison: {VARIABLE_NAMES.get(era_var, era_var)}',
+    year_str = f' ({year})' if year is not None else ''
+    fig.suptitle(f'Yearly Mean Comparison: {VARIABLE_NAMES.get(era_var, era_var)}{year_str}',
                  fontsize=16, fontweight='bold', y=0.95)
 
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -590,7 +588,7 @@ def plot_side_by_side_heatmaps(era_yearly, conus_yearly, era_var, conus_var,
 
 # main processing
 
-def process_variable(era_ds, conus_ds, era_var, conus_var, output_dir):
+def process_variable(era_ds, conus_ds, era_var, conus_var, output_dir, year=None):
     logger.info(f"processing: {VARIABLE_NAMES.get(era_var, era_var)} ({era_var} vs {conus_var})")
 
     # check if variables exist in datasets
@@ -615,23 +613,27 @@ def process_variable(era_ds, conus_ds, era_var, conus_var, output_dir):
 
         plot_seasonal_boxplots(
             era_seasonal_data, conus_seasonal_data, era_var,
-            os.path.join(var_dir, f'{era_var}_seasonal_boxplots.png')
+            os.path.join(var_dir, f'{era_var}_seasonal_boxplots.png'),
+            year=year
         )
 
         plot_qq_plot(
             era_seasonal_data, conus_seasonal_data, era_var,
-            os.path.join(var_dir, f'{era_var}_qq_plot.png')
+            os.path.join(var_dir, f'{era_var}_qq_plot.png'),
+            year=year
         )
 
         plot_yearly_timeseries(
             era_ds, conus_ds, era_var, conus_var,
-            os.path.join(var_dir, f'{era_var}_yearly_timeseries.png')
+            os.path.join(var_dir, f'{era_var}_yearly_timeseries.png'),
+            year=year
         )
 
         plot_side_by_side_heatmaps(
             era_yearly, conus_yearly, era_var, conus_var,
             era_ds, conus_ds,
-            os.path.join(var_dir, f'{era_var}_heatmap_comparison.png')
+            os.path.join(var_dir, f'{era_var}_heatmap_comparison.png'),
+            year=year
         )
 
         logger.info(f"completed processing for {era_var}")
@@ -666,7 +668,7 @@ def process_year(year):
 
     for era_var, conus_var in VARIABLE_PAIRS.items():
         try:
-            process_variable(era_ds, conus_ds, era_var, conus_var, year_output_dir)
+            process_variable(era_ds, conus_ds, era_var, conus_var, year_output_dir, year=year)
         except Exception as e:
             logger.error(f"failed to process {era_var} for year {year}: {str(e)}")
 
