@@ -38,9 +38,20 @@ def add_map_features(ax, left_labels=False):
     gl.top_labels = False
     gl.right_labels = False
     gl.left_labels = left_labels
-    gl.bottom_labels = True
+    gl.bottom_labels = False   # placed manually below the frame instead
     gl.xlabel_style = {'size': 7}
     gl.ylabel_style = {'size': 7}
+    # manually place lon labels just below the rectangular axes frame
+    lon_ticks = range(-120, -60, 10)
+    for lon in lon_ticks:
+        x_disp, _ = ax.transData.transform(
+            proj.transform_point(lon, LAT_MIN, ccrs.PlateCarree()))
+        x_ax, _ = ax.transAxes.inverted().transform((x_disp, 0))
+        if 0.0 <= x_ax <= 1.0:
+            label = f"{abs(lon)}°W"
+            ax.annotate(label, xy=(x_ax, 0), xycoords='axes fraction',
+                        xytext=(0, -12), textcoords='offset points',
+                        ha='center', va='top', fontsize=7, color='black')
 
 era   = xr.open_dataset(ERA5_FILE)
 conus = xr.open_dataset(CONUS_FILE)
