@@ -238,6 +238,9 @@ def load_seasonal_data(era_ds, conus_ds, era_var, conus_var):
     era_seasonal_data = {}
     conus_seasonal_data = {}
 
+    # Get ERA5 land mask once (static field — same for all seasons)
+    era_land_bool, _, _ = get_era5_land_mask(era_ds, LAT_MAX, LAT_MIN, LON_MIN, LON_MAX)
+
     for season_name, months in SEASONS.items():
         # era5 seasonal mean
         era_season = era_ds[era_var].sel(
@@ -247,6 +250,11 @@ def load_seasonal_data(era_ds, conus_ds, era_var, conus_var):
         era_season_mean = era_season.mean(dim=era_time_dims)
         era_season_mean = trim_to_us(era_season_mean, LAT_MIN, LAT_MAX, LON_MIN, LON_MAX)
         era_season_mean = convert_units(era_season_mean, era_var)
+        if era_land_bool is not None:
+            if era_land_bool.shape == era_season_mean.shape:
+                era_season_mean = era_season_mean.where(era_land_bool)
+            else:
+                logger.warning("ERA5 lsm shape mismatch for seasonal data; skipping ERA5 lsm mask")
         era_seasonal_data[season_name] = era_season_mean
 
         # conus seasonal mean
