@@ -9,6 +9,7 @@ import pandas as pd
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from scipy.stats import linregress
+from scipy.interpolate import RegularGridInterpolator
 import os
 from pathlib import Path
 import warnings
@@ -150,8 +151,9 @@ def add_map_features(ax, lon_min, lon_max, lat_min, lat_max):
     ax.coastlines(resolution='50m', color='black', linewidth=0.7)
     ax.add_feature(cfeature.BORDERS, linewidth=0.5)
     ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='gray')
-    # cover ocean pixels with white so neither ERA5 nor CONUS404 shows ocean data
+    # cover ocean pixels AND inland water bodies (Great Lakes) with white
     ax.add_feature(cfeature.OCEAN, facecolor='white', zorder=1)
+    ax.add_feature(cfeature.LAKES, facecolor='white', zorder=1)
     ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
 
 def get_era5_land_mask(era_ds, lat_max, lat_min, lon_min, lon_max):
@@ -175,6 +177,54 @@ def get_era5_land_mask(era_ds, lat_max, lat_min, lon_min, lon_max):
     lon_e = lsm_sub['longitude'].values
     land_bool = lsm_sub.values >= 0.5   # True where land
     return land_bool, lat_e, lon_e
+
+# cache for CONUS404 land mask (keyed by grid shape to avoid recomputation)
+_CONUS404_LAND_MASK_CACHE = {}
+
+def build_conus404_land_mask(conus_lat2d, conus_lon2d, era_ds):
+    """
+    Build a land mask for CONUS404 by nearest-neighbor interpolation of ERA5 lsm.
+    ERA5 lsm already marks the Great Lakes (and ocean) as water (lsm < 0.5), so
+    projecting it onto the CONUS404 grid gives a consistent land/water mask that
+    excludes the Great Lakes from CONUS404 statistics and heatmaps.
+    Returns a 2-D boolean array (True = land, False = ocean/Great Lakes).
+    Result is cached by grid shape.
+    """
+    shape_key = conus_lat2d.shape
+    if shape_key in _CONUS404_LAND_MASK_CACHE:
+        return _CONUS404_LAND_MASK_CACHE[shape_key]
+
+    land_bool, lat_e, lon_e = get_era5_land_mask(era_ds, LAT_MAX, LAT_MIN, LON_MIN, LON_MAX)
+    if land_bool is None:
+        logger.warning("ERA5 lsm not found; Great Lakes will NOT be excluded from CONUS404")
+        mask = np.ones(conus_lat2d.shape, dtype=bool)
+        _CONUS404_LAND_MASK_CACHE[shape_key] = mask
+        return mask
+
+    # RegularGridInterpolator requires monotonically increasing coordinates.
+    # ERA5 latitude is descending (north→south), so flip it.
+    if lat_e[0] > lat_e[-1]:
+        lat_e = lat_e[::-1]
+        land_bool = land_bool[::-1, :]
+
+    interp = RegularGridInterpolator(
+        (lat_e, lon_e),
+        land_bool.astype(np.float32),
+        method='nearest',
+        bounds_error=False,
+        fill_value=1.0   # treat points outside ERA5 domain as land
+    )
+
+    flat_lat = conus_lat2d.ravel()
+    flat_lon = conus_lon2d.ravel()
+    result = interp(np.column_stack([flat_lat, flat_lon]))
+    mask = (result >= 0.5).reshape(conus_lat2d.shape)
+
+    excluded = int((~mask).sum())
+    logger.info(f"CONUS404 land mask (ERA5 lsm interpolated): {excluded} pixels "
+                f"excluded (ocean + Great Lakes)")
+    _CONUS404_LAND_MASK_CACHE[shape_key] = mask
+    return mask
 
 # data processing functions
 
@@ -204,6 +254,15 @@ def load_seasonal_data(era_ds, conus_ds, era_var, conus_var):
             {conus_time_dim: conus_ds[conus_time_dim].dt.month.isin(months)}
         )
         conus_season_mean = conus_season.mean(dim=conus_time_dim)
+
+        # build CONUS404 land mask from ERA5 lsm (excludes ocean + Great Lakes)
+        lat_arr = conus_ds[lat_name].values
+        lon_arr = conus_ds[lon_name].values
+        if lat_arr.ndim == 3:
+            lat_arr = lat_arr[0]
+            lon_arr = lon_arr[0]
+        conus_land_mask = build_conus404_land_mask(lat_arr, lon_arr, era_ds)
+        conus_season_mean = conus_season_mean.where(conus_land_mask)
 
         # assign coordinates if needed for wrf data
         if lat_name in conus_ds and lon_name in conus_ds:
@@ -238,6 +297,15 @@ def compute_yearly_mean(era_ds, conus_ds, era_var, conus_var):
     lat_name, lon_name = get_coordinate_names(conus_ds)
     conus_yearly = conus_ds[conus_var].mean(dim=conus_time_dim)
 
+    # apply ERA5-derived land mask (excludes ocean + Great Lakes) before trimming
+    lat_grid = conus_ds[lat_name].values
+    lon_grid = conus_ds[lon_name].values
+    if lat_grid.ndim == 3:
+        lat_grid = lat_grid[0]
+        lon_grid = lon_grid[0]
+    conus_land_mask = build_conus404_land_mask(lat_grid, lon_grid, era_ds)
+    conus_yearly = conus_yearly.where(conus_land_mask)
+
     if lat_name in conus_ds and lon_name in conus_ds:
         conus_yearly = conus_yearly.assign_coords({
             lat_name: conus_ds[lat_name],
@@ -254,11 +322,6 @@ def compute_yearly_mean(era_ds, conus_ds, era_var, conus_var):
 
     # ensure CONUS404 is masked to the same bounding box as ERA5 so both
     # panels cover identical geographic area in the heatmap
-    lat_grid = conus_ds[lat_name].values
-    lon_grid = conus_ds[lon_name].values
-    if lat_grid.ndim == 3:
-        lat_grid = lat_grid[0]
-        lon_grid = lon_grid[0]
     bounds_mask = ((lat_grid >= LAT_MIN) & (lat_grid <= LAT_MAX) &
                    (lon_grid >= LON_MIN) & (lon_grid <= LON_MAX))
     conus_yearly = conus_yearly.where(bounds_mask)

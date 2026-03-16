@@ -25,7 +25,9 @@ def add_map_features(ax):
     ax.coastlines('50m', color='black', linewidth=0.7)
     ax.add_feature(cfeature.BORDERS, linewidth=0.5)
     ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='gray')
+    # mask ocean and inland water bodies (Great Lakes etc.) on both panels
     ax.add_feature(cfeature.OCEAN, facecolor='white', zorder=1)
+    ax.add_feature(cfeature.LAKES, facecolor='white', zorder=1)
     ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
 
 era   = xr.open_dataset(ERA5_FILE)
@@ -46,14 +48,22 @@ lon_e = era_t2m['longitude'].values
 
 # ── CONUS404 T2 yearly mean ──────────────────────────────────────────────────
 conus_t2 = conus['T2'].mean(dim='time')
-lat2d = conus['lat'].values
-lon2d = conus['lon'].values
-conus_arr = conus_t2.values
+lat2d_da = conus['lat']   # DataArray, dims (south_north, west_east)
+lon2d_da = conus['lon']
 
-# mask CONUS404 to the same bounding box as ERA5 so both panels cover identical area
-bounds_mask = ((lat2d >= LAT_MIN) & (lat2d <= LAT_MAX) &
-               (lon2d >= LON_MIN) & (lon2d <= LON_MAX))
-conus_arr = np.where(bounds_mask, conus_arr, np.nan)
+# use the same approach as the original analysis script: build a 2D boolean mask
+# and call .where(mask, drop=True) so xarray drops outer rows/columns that are
+# entirely outside the bounding box, avoiding WRF cell-edge bleed-through
+bounds_mask = (
+    (lat2d_da >= LAT_MIN) & (lat2d_da <= LAT_MAX) &
+    (lon2d_da >= LON_MIN) & (lon2d_da <= LON_MAX)
+)
+conus_t2 = conus_t2.where(bounds_mask, drop=True)
+
+# rebuild trimmed 2D lat/lon arrays for pcolormesh
+lat2d = conus['lat'].where(bounds_mask, drop=True).values
+lon2d = conus['lon'].where(bounds_mask, drop=True).values
+conus_arr = conus_t2.values
 
 # ── shared colorscale (land-only values) ─────────────────────────────────────
 vmin = min(np.nanmin(era_arr), np.nanmin(conus_arr))
