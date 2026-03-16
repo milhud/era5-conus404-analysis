@@ -6,6 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.ticker
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import os
@@ -21,7 +22,7 @@ os.makedirs("plots", exist_ok=True)
 proj = ccrs.LambertConformal(central_longitude=-96, central_latitude=39,
                              standard_parallels=(33, 45))
 
-def add_map_features(ax):
+def add_map_features(ax, left_labels=False):
     ax.coastlines('50m', color='black', linewidth=0.7)
     ax.add_feature(cfeature.BORDERS, linewidth=0.5)
     ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='gray')
@@ -29,6 +30,17 @@ def add_map_features(ax):
     ax.add_feature(cfeature.OCEAN, facecolor='white', zorder=1)
     ax.add_feature(cfeature.LAKES, facecolor='white', zorder=1)
     ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
+    # lat/lon gridlines with tick markings
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                      linewidth=0.5, color='gray', alpha=0.6, linestyle='--')
+    gl.xlocator = matplotlib.ticker.FixedLocator(range(-120, -60, 10))
+    gl.ylocator = matplotlib.ticker.FixedLocator(range(25, 55, 5))
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.left_labels = left_labels
+    gl.bottom_labels = True
+    gl.xlabel_style = {'size': 7}
+    gl.ylabel_style = {'size': 7}
 
 era   = xr.open_dataset(ERA5_FILE)
 conus = xr.open_dataset(CONUS_FILE)
@@ -51,19 +63,24 @@ conus_t2 = conus['T2'].mean(dim='time')
 lat2d_da = conus['lat']   # DataArray, dims (south_north, west_east)
 lon2d_da = conus['lon']
 
-# use the same approach as the original analysis script: build a 2D boolean mask
-# and call .where(mask, drop=True) so xarray drops outer rows/columns that are
-# entirely outside the bounding box, avoiding WRF cell-edge bleed-through
+# build a 2D boolean mask to identify cells within the bounding box
 bounds_mask = (
     (lat2d_da >= LAT_MIN) & (lat2d_da <= LAT_MAX) &
     (lon2d_da >= LON_MIN) & (lon2d_da <= LON_MAX)
 )
-conus_t2 = conus_t2.where(bounds_mask, drop=True)
+# find the rectangular row/col extents of the valid region
+valid = bounds_mask.values
+valid_rows = np.where(valid.any(axis=1))[0]
+valid_cols = np.where(valid.any(axis=0))[0]
+row_sl = slice(valid_rows[0], valid_rows[-1] + 1)
+col_sl = slice(valid_cols[0], valid_cols[-1] + 1)
 
-# rebuild trimmed 2D lat/lon arrays for pcolormesh
-lat2d = conus['lat'].where(bounds_mask, drop=True).values
-lon2d = conus['lon'].where(bounds_mask, drop=True).values
-conus_arr = conus_t2.values
+# use a plain rectangular slice for coordinates (no masked values in lat/lon)
+lat2d = conus['lat'].values[row_sl, col_sl]
+lon2d = conus['lon'].values[row_sl, col_sl]
+# mask data values outside the bounding box with NaN
+inner_mask = valid[row_sl, col_sl]
+conus_arr = np.where(inner_mask, conus_t2.values[row_sl, col_sl], np.nan)
 
 # ── shared colorscale (land-only values) ─────────────────────────────────────
 vmin = min(np.nanmin(era_arr), np.nanmin(conus_arr))
@@ -76,7 +93,7 @@ gs  = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.05)
 ax1 = fig.add_subplot(gs[0], projection=proj)
 im1 = ax1.pcolormesh(lon_e, lat_e, era_arr, transform=ccrs.PlateCarree(),
                      cmap='RdYlBu_r', vmin=vmin, vmax=vmax, shading='auto')
-add_map_features(ax1)
+add_map_features(ax1, left_labels=True)
 ax1.set_title('ERA5', fontsize=14, fontweight='bold', pad=10)
 
 ax2 = fig.add_subplot(gs[1], projection=proj)
