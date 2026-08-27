@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 BASE_OUTPUT_DIR = "comparison_metrics"
 
 CONUS_BASE = "../../hpmille1/final_data/conus404_yearly_{year}.nc"
-ERA5_BASE = "../pipeline/data/processed/era5_{year}.nc"
+ERA5_BASE = "../pipeline/data/processed/yearly/era5_{year}.nc"
 
 YEARS = range(1980, 2021)
 
@@ -102,7 +102,7 @@ RANDOM_SEED = 42
 # DATASET HELPERS
 # ============================================================
 
-def get_time_dim(ds):
+def get_time_dimension(ds):
     """
     Robustly identify the actual time dimension.
 
