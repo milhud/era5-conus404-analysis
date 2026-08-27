@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 # CONFIGURATION
-BASE_OUTPUT_DIR = "comparison_metrics"
+BASE_OUTPUT_DIR = "comparison_metricsi2"
 
 CONUS_BASE = "../../hpmille1/final_data/conus404_yearly_{year}.nc"
 ERA5_BASE = "../pipeline/data/processed/yearly/era5_{year}.nc"
