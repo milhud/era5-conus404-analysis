@@ -3390,3 +3390,274 @@
 2026-08-27 17:01:36,121 - INFO - v10 2009: 365 matched temporal records
 2026-08-27 17:01:38,328 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
 2026-08-27 17:02:10,701 - INFO - lai 2009: 365 matched temporal records
+2026-08-27 17:02:22,858 - INFO - Precipitation 2009: 365 matched days
+2026-08-27 17:02:25,150 - INFO - Wind speed 2009: 365 matched records
+2026-08-27 17:02:25,166 - INFO - 
+2026-08-27 17:02:25,167 - INFO - ======================================================================
+2026-08-27 17:02:25,167 - INFO - PROCESSING 2010
+2026-08-27 17:02:25,167 - INFO - ======================================================================
+2026-08-27 17:02:25,786 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2010.nc
+2026-08-27 17:02:25,786 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2010.nc
+2026-08-27 17:02:25,787 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:02:25,787 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:02:25,787 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:02:25,787 - INFO - CONUS404 time dimension: time
+2026-08-27 17:02:25,825 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:03:02,494 - INFO - t2m 2010: 365 matched temporal records
+2026-08-27 17:03:04,624 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:03:43,642 - INFO - d2m 2010: 365 matched temporal records
+2026-08-27 17:03:45,722 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:04:25,669 - INFO - sp 2010: 365 matched temporal records
+2026-08-27 17:04:27,680 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:04:58,194 - INFO - u10 2010: 365 matched temporal records
+2026-08-27 17:05:00,227 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:05:28,089 - INFO - v10 2010: 365 matched temporal records
+2026-08-27 17:05:30,249 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:06:02,775 - INFO - lai 2010: 365 matched temporal records
+2026-08-27 17:06:14,754 - INFO - Precipitation 2010: 365 matched days
+2026-08-27 17:06:16,876 - INFO - Wind speed 2010: 365 matched records
+2026-08-27 17:06:16,888 - INFO - 
+2026-08-27 17:06:16,888 - INFO - ======================================================================
+2026-08-27 17:06:16,888 - INFO - PROCESSING 2011
+2026-08-27 17:06:16,888 - INFO - ======================================================================
+2026-08-27 17:06:17,539 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2011.nc
+2026-08-27 17:06:17,539 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2011.nc
+2026-08-27 17:06:17,539 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:06:17,539 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:06:17,539 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:06:17,540 - INFO - CONUS404 time dimension: time
+2026-08-27 17:06:17,570 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:06:55,060 - INFO - t2m 2011: 365 matched temporal records
+2026-08-27 17:06:57,153 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:07:36,512 - INFO - d2m 2011: 365 matched temporal records
+2026-08-27 17:07:38,568 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:08:16,852 - INFO - sp 2011: 365 matched temporal records
+2026-08-27 17:08:18,918 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:08:46,060 - INFO - u10 2011: 365 matched temporal records
+2026-08-27 17:08:48,114 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:09:16,719 - INFO - v10 2011: 365 matched temporal records
+2026-08-27 17:09:18,832 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:09:50,116 - INFO - lai 2011: 365 matched temporal records
+2026-08-27 17:10:02,087 - INFO - Precipitation 2011: 365 matched days
+2026-08-27 17:10:04,222 - INFO - Wind speed 2011: 365 matched records
+2026-08-27 17:10:04,233 - INFO - 
+2026-08-27 17:10:04,234 - INFO - ======================================================================
+2026-08-27 17:10:04,234 - INFO - PROCESSING 2012
+2026-08-27 17:10:04,234 - INFO - ======================================================================
+2026-08-27 17:10:04,739 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2012.nc
+2026-08-27 17:10:04,739 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2012.nc
+2026-08-27 17:10:04,739 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 366, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:10:04,739 - INFO - CONUS404 dimensions: {'time': 366, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:10:04,739 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:10:04,739 - INFO - CONUS404 time dimension: time
+2026-08-27 17:10:04,775 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:10:43,485 - INFO - t2m 2012: 366 matched temporal records
+2026-08-27 17:10:45,626 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:11:28,015 - INFO - d2m 2012: 366 matched temporal records
+2026-08-27 17:11:30,079 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:12:09,152 - INFO - sp 2012: 366 matched temporal records
+2026-08-27 17:12:11,208 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:12:40,796 - INFO - u10 2012: 366 matched temporal records
+2026-08-27 17:12:42,872 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:13:09,238 - INFO - v10 2012: 366 matched temporal records
+2026-08-27 17:13:11,350 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:13:44,125 - INFO - lai 2012: 366 matched temporal records
+2026-08-27 17:13:56,121 - INFO - Precipitation 2012: 366 matched days
+2026-08-27 17:13:58,273 - INFO - Wind speed 2012: 366 matched records
+2026-08-27 17:13:58,284 - INFO - 
+2026-08-27 17:13:58,284 - INFO - ======================================================================
+2026-08-27 17:13:58,284 - INFO - PROCESSING 2013
+2026-08-27 17:13:58,284 - INFO - ======================================================================
+2026-08-27 17:13:58,999 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2013.nc
+2026-08-27 17:13:58,999 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2013.nc
+2026-08-27 17:13:58,999 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:13:58,999 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:13:58,999 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:13:58,999 - INFO - CONUS404 time dimension: time
+2026-08-27 17:13:59,031 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:14:42,868 - INFO - t2m 2013: 365 matched temporal records
+2026-08-27 17:14:45,061 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:15:33,361 - INFO - d2m 2013: 365 matched temporal records
+2026-08-27 17:15:35,385 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:16:18,925 - INFO - sp 2013: 365 matched temporal records
+2026-08-27 17:16:20,938 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:16:52,593 - INFO - u10 2013: 365 matched temporal records
+2026-08-27 17:16:54,640 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:17:20,082 - INFO - v10 2013: 365 matched temporal records
+2026-08-27 17:17:22,590 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:17:56,369 - INFO - lai 2013: 365 matched temporal records
+2026-08-27 17:18:09,474 - INFO - Precipitation 2013: 365 matched days
+2026-08-27 17:18:14,205 - INFO - Wind speed 2013: 365 matched records
+2026-08-27 17:18:14,217 - INFO - 
+2026-08-27 17:18:14,218 - INFO - ======================================================================
+2026-08-27 17:18:14,218 - INFO - PROCESSING 2014
+2026-08-27 17:18:14,218 - INFO - ======================================================================
+2026-08-27 17:18:14,816 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2014.nc
+2026-08-27 17:18:14,816 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2014.nc
+2026-08-27 17:18:14,816 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:18:14,816 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:18:14,816 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:18:14,816 - INFO - CONUS404 time dimension: time
+2026-08-27 17:18:14,849 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:18:56,111 - INFO - t2m 2014: 365 matched temporal records
+2026-08-27 17:18:58,275 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:19:40,851 - INFO - d2m 2014: 365 matched temporal records
+2026-08-27 17:19:42,895 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:20:24,721 - INFO - sp 2014: 365 matched temporal records
+2026-08-27 17:20:26,794 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:20:55,933 - INFO - u10 2014: 365 matched temporal records
+2026-08-27 17:20:57,994 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:21:30,000 - INFO - v10 2014: 365 matched temporal records
+2026-08-27 17:21:32,124 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:22:07,804 - INFO - lai 2014: 365 matched temporal records
+2026-08-27 17:22:19,773 - INFO - Precipitation 2014: 365 matched days
+2026-08-27 17:22:21,908 - INFO - Wind speed 2014: 365 matched records
+2026-08-27 17:22:21,920 - INFO - 
+2026-08-27 17:22:21,920 - INFO - ======================================================================
+2026-08-27 17:22:21,920 - INFO - PROCESSING 2015
+2026-08-27 17:22:21,921 - INFO - ======================================================================
+2026-08-27 17:22:23,067 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2015.nc
+2026-08-27 17:22:23,067 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2015.nc
+2026-08-27 17:22:23,067 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:22:23,067 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:22:23,067 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:22:23,067 - INFO - CONUS404 time dimension: time
+2026-08-27 17:22:23,098 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:23:09,245 - INFO - t2m 2015: 365 matched temporal records
+2026-08-27 17:23:11,353 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:24:00,617 - INFO - d2m 2015: 365 matched temporal records
+2026-08-27 17:24:02,655 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:24:49,351 - INFO - sp 2015: 365 matched temporal records
+2026-08-27 17:24:51,420 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:25:21,454 - INFO - u10 2015: 365 matched temporal records
+2026-08-27 17:25:23,536 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:25:54,337 - INFO - v10 2015: 365 matched temporal records
+2026-08-27 17:25:56,463 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:26:34,538 - INFO - lai 2015: 365 matched temporal records
+2026-08-27 17:26:46,523 - INFO - Precipitation 2015: 365 matched days
+2026-08-27 17:26:48,644 - INFO - Wind speed 2015: 365 matched records
+2026-08-27 17:26:48,655 - INFO - 
+2026-08-27 17:26:48,656 - INFO - ======================================================================
+2026-08-27 17:26:48,656 - INFO - PROCESSING 2016
+2026-08-27 17:26:48,656 - INFO - ======================================================================
+2026-08-27 17:26:49,502 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2016.nc
+2026-08-27 17:26:49,502 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2016.nc
+2026-08-27 17:26:49,502 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 366, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:26:49,502 - INFO - CONUS404 dimensions: {'time': 366, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:26:49,502 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:26:49,502 - INFO - CONUS404 time dimension: time
+2026-08-27 17:26:49,535 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:27:35,532 - INFO - t2m 2016: 366 matched temporal records
+2026-08-27 17:27:37,659 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:28:21,088 - INFO - d2m 2016: 366 matched temporal records
+2026-08-27 17:28:23,159 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:29:04,975 - INFO - sp 2016: 366 matched temporal records
+2026-08-27 17:29:06,998 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:29:35,108 - INFO - u10 2016: 366 matched temporal records
+2026-08-27 17:29:37,146 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:30:04,933 - INFO - v10 2016: 366 matched temporal records
+2026-08-27 17:30:07,022 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:30:39,188 - INFO - lai 2016: 366 matched temporal records
+2026-08-27 17:30:51,236 - INFO - Precipitation 2016: 366 matched days
+2026-08-27 17:30:53,334 - INFO - Wind speed 2016: 366 matched records
+2026-08-27 17:30:53,345 - INFO - 
+2026-08-27 17:30:53,346 - INFO - ======================================================================
+2026-08-27 17:30:53,346 - INFO - PROCESSING 2017
+2026-08-27 17:30:53,346 - INFO - ======================================================================
+2026-08-27 17:30:54,133 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2017.nc
+2026-08-27 17:30:54,133 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2017.nc
+2026-08-27 17:30:54,133 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:30:54,133 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:30:54,133 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:30:54,133 - INFO - CONUS404 time dimension: time
+2026-08-27 17:30:54,167 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:31:41,622 - INFO - t2m 2017: 365 matched temporal records
+2026-08-27 17:31:43,686 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:32:29,188 - INFO - d2m 2017: 365 matched temporal records
+2026-08-27 17:32:31,201 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:33:15,489 - INFO - sp 2017: 365 matched temporal records
+2026-08-27 17:33:17,523 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:33:49,063 - INFO - u10 2017: 365 matched temporal records
+2026-08-27 17:33:51,072 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:34:23,416 - INFO - v10 2017: 365 matched temporal records
+2026-08-27 17:34:25,579 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:35:01,465 - INFO - lai 2017: 365 matched temporal records
+2026-08-27 17:35:13,928 - INFO - Precipitation 2017: 365 matched days
+2026-08-27 17:35:16,525 - INFO - Wind speed 2017: 365 matched records
+2026-08-27 17:35:16,534 - INFO - 
+2026-08-27 17:35:16,535 - INFO - ======================================================================
+2026-08-27 17:35:16,535 - INFO - PROCESSING 2018
+2026-08-27 17:35:16,535 - INFO - ======================================================================
+2026-08-27 17:35:17,333 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2018.nc
+2026-08-27 17:35:17,333 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2018.nc
+2026-08-27 17:35:17,333 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:35:17,333 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:35:17,334 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:35:17,334 - INFO - CONUS404 time dimension: time
+2026-08-27 17:35:17,366 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:36:01,048 - INFO - t2m 2018: 365 matched temporal records
+2026-08-27 17:36:03,332 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:36:47,432 - INFO - d2m 2018: 365 matched temporal records
+2026-08-27 17:36:49,803 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:37:31,282 - INFO - sp 2018: 365 matched temporal records
+2026-08-27 17:37:33,508 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:38:02,898 - INFO - u10 2018: 365 matched temporal records
+2026-08-27 17:38:05,220 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:38:34,677 - INFO - v10 2018: 365 matched temporal records
+2026-08-27 17:38:36,956 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:39:11,051 - INFO - lai 2018: 365 matched temporal records
+2026-08-27 17:39:23,410 - INFO - Precipitation 2018: 365 matched days
+2026-08-27 17:39:25,715 - INFO - Wind speed 2018: 365 matched records
+2026-08-27 17:39:25,727 - INFO - 
+2026-08-27 17:39:25,728 - INFO - ======================================================================
+2026-08-27 17:39:25,728 - INFO - PROCESSING 2019
+2026-08-27 17:39:25,728 - INFO - ======================================================================
+2026-08-27 17:39:26,470 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2019.nc
+2026-08-27 17:39:26,470 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2019.nc
+2026-08-27 17:39:26,470 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 365, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:39:26,470 - INFO - CONUS404 dimensions: {'time': 365, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:39:26,470 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:39:26,470 - INFO - CONUS404 time dimension: time
+2026-08-27 17:39:26,503 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:40:08,250 - INFO - t2m 2019: 365 matched temporal records
+2026-08-27 17:40:10,729 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:40:53,599 - INFO - d2m 2019: 365 matched temporal records
+2026-08-27 17:40:55,973 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:41:36,839 - INFO - sp 2019: 365 matched temporal records
+2026-08-27 17:41:38,965 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:42:09,148 - INFO - u10 2019: 365 matched temporal records
+2026-08-27 17:42:12,539 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:42:42,878 - INFO - v10 2019: 365 matched temporal records
+2026-08-27 17:42:44,950 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:43:19,368 - INFO - lai 2019: 365 matched temporal records
+2026-08-27 17:43:31,989 - INFO - Precipitation 2019: 365 matched days
+2026-08-27 17:43:34,650 - INFO - Wind speed 2019: 365 matched records
+2026-08-27 17:43:34,663 - INFO - 
+2026-08-27 17:43:34,664 - INFO - ======================================================================
+2026-08-27 17:43:34,664 - INFO - PROCESSING 2020
+2026-08-27 17:43:34,664 - INFO - ======================================================================
+2026-08-27 17:43:35,557 - INFO - Loaded ERA5: ../pipeline/data/processed/yearly/era5_2020.nc
+2026-08-27 17:43:35,557 - INFO - Loaded CONUS404: ../../hpmille1/final_data/conus404_yearly_2020.nc
+2026-08-27 17:43:35,557 - INFO - ERA5 dimensions: {'time': 12, 'valid_time': 366, 'latitude': 111, 'longitude': 235}
+2026-08-27 17:43:35,557 - INFO - CONUS404 dimensions: {'time': 366, 'south_north': 1015, 'west_east': 1367, 'bottom_top_stag': 51}
+2026-08-27 17:43:35,557 - INFO - ERA5 time dimension: valid_time
+2026-08-27 17:43:35,557 - INFO - CONUS404 time dimension: time
+2026-08-27 17:43:35,596 - INFO - t2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:44:18,428 - INFO - t2m 2020: 366 matched temporal records
+2026-08-27 17:44:20,796 - INFO - d2m: ERA5 units=K; CONUS404 units=K
+2026-08-27 17:45:03,686 - INFO - d2m 2020: 366 matched temporal records
+2026-08-27 17:45:06,064 - INFO - sp: ERA5 units=Pa; CONUS404 units=Pa
+2026-08-27 17:45:46,852 - INFO - sp 2020: 366 matched temporal records
+2026-08-27 17:45:49,174 - INFO - u10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:46:17,996 - INFO - u10 2020: 366 matched temporal records
+2026-08-27 17:46:20,131 - INFO - v10: ERA5 units=m s**-1; CONUS404 units=m s-1
+2026-08-27 17:46:48,477 - INFO - v10 2020: 366 matched temporal records
+2026-08-27 17:46:50,823 - INFO - lai: ERA5 units=unknown; CONUS404 units=m-2/m-2
+2026-08-27 17:47:23,087 - INFO - lai 2020: 366 matched temporal records
+2026-08-27 17:47:35,550 - INFO - Precipitation 2020: 366 matched days
+2026-08-27 17:47:37,891 - INFO - Wind speed 2020: 366 matched records
+2026-08-27 17:47:38,087 - INFO - Saved: comparison_metricsi2/annual_spatial_metrics.csv
+2026-08-27 17:47:38,101 - INFO - Saved: comparison_metricsi2/annual_temporal_metrics.csv
+2026-08-27 17:47:38,151 - INFO - Saved: comparison_metricsi2/seasonal_temporal_metrics.csv
+2026-08-27 17:47:38,157 - INFO - Saved: comparison_metricsi2/precipitation_metrics.csv
+2026-08-27 17:47:38,163 - INFO - Saved: comparison_metricsi2/wind_speed_metrics.csv
