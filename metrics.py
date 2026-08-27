@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 BASE_OUTPUT_DIR = "comparison_metrics"
 
-CONUS_BASE = "../../final_data/conus404_yearly_{year}.nc"
-ERA5_BASE = "../../../sduan/pipeline/data/processed/era5_{year}.nc"
+CONUS_BASE = "../../hpmille1/final_data/conus404_yearly_{year}.nc"
+ERA5_BASE = "../pipeline/data/processed/era5_{year}.nc"
 
 YEARS = range(1980, 2021)
 
@@ -102,20 +102,44 @@ RANDOM_SEED = 42
 # DATASET HELPERS
 # ============================================================
 
-def get_time_dimension(ds):
+def get_time_dim(ds):
+    """
+    Robustly identify the actual time dimension.
 
-    if "Time" in ds.dims:
-        return "Time"
+    The previous code assumed that 'valid_time' was always a dimension.
+    In ERA5 files it may instead be a coordinate associated with another
+    dimension such as 'time'.
+    """
 
-    if "time" in ds.dims:
-        return "time"
+    # First look at dimensions.
+    for candidate in ["valid_time", "time", "Time", "datetime", "date"]:
+        if candidate in ds.dims:
+            return candidate
 
-    if "valid_time" in ds.dims:
-        return "valid_time"
+    # Then inspect coordinates.
+    for candidate in ["valid_time", "time", "Time", "datetime", "date"]:
+        if candidate in ds.coords:
+            coord = ds[candidate]
+
+            # If this coordinate has a dimension, return that dimension.
+            if coord.ndim >= 1:
+                for dim in coord.dims:
+                    if dim in ds.dims:
+                        return dim
+
+    # Finally inspect dimension coordinates for datetime types.
+    for dim in ds.dims:
+        try:
+            values = ds[dim].values
+            if np.issubdtype(values.dtype, np.datetime64):
+                return dim
+        except Exception:
+            pass
 
     raise ValueError(
         f"Could not identify time dimension. "
-        f"Dimensions are: {list(ds.dims)}"
+        f"Dimensions={list(ds.dims)}, "
+        f"Coordinates={list(ds.coords)}"
     )
 
 
