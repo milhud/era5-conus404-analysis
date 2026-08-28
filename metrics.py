@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 # CONFIGURATION
-BASE_OUTPUT_DIR = "comparison_metricsi2"
+BASE_OUTPUT_DIR = "comparison_metrics_new"
 
 CONUS_BASE = "../../hpmille1/final_data/conus404_yearly_{year}.nc"
 ERA5_BASE = "../pipeline/data/processed/yearly/era5_{year}.nc"
@@ -789,7 +789,7 @@ def process_variable(era_ds,conus_ds,era_var,conus_var,year):
         time_dim_conus = get_time_dim(conus_ds)
         conus_data = (conus_ds[conus_var].mean(dim=time_dim_conus,skipna=True))
         conus_data = trim_conus_to_us(conus_data,conus_ds)
-        conus_data = convert_conus_units(conus_data,era_var)
+        conus_data = convert_conus_units(conus_data,conus_var)
 
         # Distribution metrics
         distribution = (calculate_distribution_metrics(era_data.values,conus_data.values))
@@ -1203,7 +1203,7 @@ def main():
             era_ds.close()
             conus_ds.close()
 
-
+    
     # SAVE ANNUAL SPATIAL RESULTS
     if all_spatial:
         spatial_df = pd.DataFrame(all_spatial)
@@ -1252,7 +1252,7 @@ def main():
         wind_df.to_csv(file,index=False,float_format="%.6f")
 
         logger.info(f"Saved: {file}")
-
+    
 
 
     # POOLED 1980-2020 TEMPORAL DISTRIBUTIONS
