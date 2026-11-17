@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 # configuration
 BASE_OUTPUT_DIR = 'plots'
-CONUS_BASE = "../../final_data/conus404_yearly_{year}.nc"
-ERA5_BASE = "../../../sduan/pipeline/data/processed/era5_{year}.nc"
+CONUS_BASE = "/discover/nobackup/hpmille1/data/conus404_data/conus404_yearly_{year}.nc"
+ERA5_BASE = "/discover/nobackup/hpmille1/data/era5_data/era5_{year}.nc"
 YEARS = [2015]
 
 # variable pairs: era5 (key) : conus404 (value)

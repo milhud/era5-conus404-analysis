@@ -12,8 +12,8 @@ import cartopy.feature as cfeature
 import os
 
 YEAR = 2015
-ERA5_FILE  = f"/gpfsm/dnb33/sduan/pipeline/data/processed/era5_{YEAR}.nc"
-CONUS_FILE = f"/gpfsm/dnb33/hpmille1/final_data/conus404_yearly_{YEAR}.nc"
+ERA5_FILE  = f"/discover/nobackup/hpmille1/data/era5_data/era5_{YEAR}.nc"
+CONUS_FILE = f"/discover/nobackup/hpmille1/data/conus404_data/conus404_yearly_{YEAR}.nc"
 LAT_MIN, LAT_MAX = 24, 50
 LON_MIN, LON_MAX = -125, -66
 
